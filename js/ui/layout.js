@@ -134,7 +134,7 @@ LayoutManager.prototype = {
             let panel = new Panel.Panel(this, data.isBottom, isPrimary);
             box.add(panel.actor);
             box._panelData = data;
-            panel.connect('height-changed', Lang.bind(this, this._processPanelSettings));
+            panel.connect('style-changed', Lang.bind(this, this._processPanelSettings));
             this._panels.push(panel);
         }, this);
     },

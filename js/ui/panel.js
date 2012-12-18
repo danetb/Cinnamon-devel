@@ -670,9 +670,10 @@ Panel.prototype = {
         
         this._handlePanelEditMode();
         global.settings.connect("changed::panel-edit-mode", Lang.bind(this, this._handlePanelEditMode));
-        this._lastSetHeight = null;
         this.actor.connect('style-changed', Lang.bind(this, function() {
-            this.emit('height-changed');
+            if (!this._suppress_style_changed) {
+                this.emit('style-changed');
+            }
         }));
     },
 
@@ -733,7 +734,12 @@ Panel.prototype = {
 
 
                 this._menus.addMenu(this._context_menu);
+
+
+                // the menu.open call causes a temporary style change that we don't want the layout manager to react on,
+                this._suppress_style_changed = true;
                 this._context_menu.open();
+                this._suppress_style_changed = false;
 
                 this._context_menu._boxPointer._container.connect('allocate', Lang.bind(this._context_menu._boxPointer, function(actor, box, flags){
                     this._xPosition = this._xpos;
@@ -766,7 +772,6 @@ Panel.prototype = {
     },
     
     _setPanelHeight: function(panelHeight, scalable) {
-        this._lastSetHeight = panelHeight;
         if (panelHeight === null) {
             let themeNode = this.actor.get_theme_node();
             panelHeight = themeNode.get_length("height");
@@ -774,15 +779,17 @@ Panel.prototype = {
                 panelHeight = 25;
             }
         }
-        let textheight = 0;
+        this.actor.set_height(panelHeight);
+
+        this._suppress_style_changed = true; // disable 'style-changed' broadcast
         if (scalable) {
-            textheight = Math.round(panelHeight / Applet.DEFAULT_PANEL_HEIGHT * Applet.PANEL_FONT_DEFAULT_HEIGHT);
+            let textheight = Math.round(panelHeight / Applet.DEFAULT_PANEL_HEIGHT * Applet.PANEL_FONT_DEFAULT_HEIGHT);
             this.actor.set_style('font-size: ' + textheight + 'px;');
         } else {
             let themeFontSize = this.actor.get_theme_node().get_length("font-size");
             this.actor.set_style('font-size: ' + themeFontSize ? themeFontSize + 'px;' : '8.5pt;');
         }
-        this.actor.set_height(panelHeight);
+        this._suppress_style_changed = false;
     },
 
     _getPreferredWidth: function(actor, forHeight, alloc) {
