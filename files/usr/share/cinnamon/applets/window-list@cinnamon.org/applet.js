@@ -908,6 +908,11 @@ MyApplet.prototype = {
     calculate_alert_positions: function() {
         this._clean_alert_boxes();
 
+        // purge destroyed alert windows
+        this._alertWindows = this._alertWindows.filter(function(alertWindow) {
+            return alertWindow.metaWindow.get_workspace() != null;
+        }, this);
+
         let cur_ws_index = global.screen.get_active_workspace_index();
 
         for (let i = 0; i < this._alertWindows.length; i++ ) {
@@ -1014,6 +1019,7 @@ MyApplet.prototype = {
                 break;
             }
         }
+        this.calculate_alert_positions();
     },
     
     _changeWorkspaces: function() {
