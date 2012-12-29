@@ -794,7 +794,7 @@ Panel.prototype = {
 
     _getPreferredWidth: function(actor, forHeight, alloc) {
         alloc.min_size = -1;
-        alloc.natural_size = this._layoutManager.primaryMonitor.width;
+        alloc.natural_size = -1;
     },
 
     _getPreferredHeight: function(actor, forWidth, alloc) {
