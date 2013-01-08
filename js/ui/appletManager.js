@@ -96,6 +96,11 @@ function getEnabledAppletDefinitions() {
     return result;
 }
 
+function panelFieldToPanel(field) {
+    let panelNO =  parseInt(field.slice(5));
+    return Main.layoutManager.getPanel(panelNO - 1, true); // base 1
+}
+
 function getAppletDefinition(definition) {
     // format used in gsettings is 'panel:location:order:uuid:applet_id' where:
     // - panel is something like 'panel1',
@@ -104,7 +109,7 @@ function getAppletDefinition(definition) {
     // - applet_id is a unique id assigned to the applet instance when added.
     let elements = definition.split(":");
     if (elements.length == 5) {
-        let panel = elements[0] == "panel2" ? Main.panel2 : Main.panel;
+        let panel = panelFieldToPanel(elements[0]);
         let orientation = panel.bottomPosition ? St.Side.BOTTOM : St.Side.TOP;
         let order;
         try { order = parseInt(elements[2]); } catch(e) { order = 0; }
@@ -338,26 +343,19 @@ function _removeAppletFromPanel(menuitem, event, uuid, applet_id) {
 }
 
 function saveAppletsPositions() {
-    let panels = [Main.panel, Main.panel2];
     let zones_strings = ["left", "center", "right"];
     let allApplets = new Array();
-    for (var i in panels){
-        let panel = panels[i];
-        if (!panel) continue;
+    Main.layoutManager.panels.forEach(function(panel, i) {
         for (var j in zones_strings){
             let zone_string = zones_strings[j];
             let zone = panel["_"+zone_string+"Box"];
             let children = zone.get_children();
             for (var k in children) if (children[k]._applet) allApplets.push(children[k]._applet);
         }
-    }
+    }, this);
     let applets = new Array();
-    for (var i in panels){
-        let panel = panels[i];
-        if (!panel) continue;
-        let panel_string;
-        if (panel == Main.panel) panel_string = "panel1";
-        else panel_string = "panel2";
+    Main.layoutManager.panels.forEach(function(panel, i) {
+        let panel_string = "panel" + i + 1;
         for (var j in zones_strings){
             let zone_string = zones_strings[j];
             let zone = panel["_"+zone_string+"Box"];
@@ -372,7 +370,7 @@ function saveAppletsPositions() {
                 if (appletZone == zone) applets.push(panel_string+":"+zone_string+":"+appletOrder+":"+applet._uuid+":"+applet._applet_id);
             }
         }
-    }
+    }, this);
     for (var i in allApplets){
         allApplets[i]._newPanelLocation = null;
         allApplets[i]._newOrder = null;
