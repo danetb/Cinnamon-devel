@@ -173,7 +173,16 @@ AltTabPopup.prototype = {
         
         this._currentApp = 0;
         this._currentWindow = -1;
-        let windows = Main.getTabList();
+        
+        let windows = Main.getTabList(); // first, all windows from the current ws
+        let activeIndex = global.screen.get_active_workspace_index();
+        for (let i = 0, numws = global.screen.n_workspaces; numws > 1 && i < numws; ++i) {
+            // pick up windows from all other workspaces, beginning with the next, then wrap around
+            let wsIndex = (i + activeIndex) % numws;
+            if (wsIndex != activeIndex) {
+                windows = windows.concat(Main.getTabList(global.screen.get_workspace_by_index(wsIndex)));
+            }
+        }
         this._appSwitcher = new AppSwitcher(windows, this._showThumbnails, this);
         this.actor.add_actor(this._appSwitcher.actor);
         if (!this._iconsEnabled && !this._thumbnailsEnabled) {
@@ -806,9 +815,12 @@ SwitcherList.prototype = {
         this._rightArrow.opacity = this._rightGradient.opacity;
     },
 
-    addItem : function(item, label) {
+    addItem : function(item, label, extra_style) {
         let bbox = new St.Button({ style_class: 'item-box',
                                    reactive: true });
+        if (extra_style) {
+            bbox.add_style_class_name(extra_style);
+        }
 
         bbox.set_child(item);
         this._list.add_actor(bbox);
@@ -1219,7 +1231,9 @@ AppSwitcher.prototype = {
 
     _addIcon : function(appIcon) {
         this.icons.push(appIcon);
-        this.addItem(appIcon.actor, appIcon.label);
+        let is_urgent = appIcon.window.is_demanding_attention() || appIcon.window.is_urgent();
+        let style = is_urgent ? "window-list-item-demands-attention" : null;
+        this.addItem(appIcon.actor, appIcon.label, style);
 
         let n = this._arrows.length;
         let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
