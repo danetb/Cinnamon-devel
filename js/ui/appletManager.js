@@ -241,6 +241,9 @@ function addAppletToPanels(extension, appletDefinition) {
         let applet = createApplet(extension, appletDefinition);
         if(applet == null)
             return;
+        if (extension.meta['role']) {
+            Extension.Type.APPLET.roles[extension.meta['role']] = applet;
+        }
 
         applet._order = appletDefinition.order;
         applet._extension = extension;
