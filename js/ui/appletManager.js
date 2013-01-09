@@ -97,7 +97,10 @@ function getEnabledAppletDefinitions() {
 }
 
 function panelFieldToPanel(field) {
-    let panelNoBaseOne =  (field && field.length > 5) ? (parseInt(field.slice(5)) || 0) : 1;
+    let panelNoBaseOne =  (field && field.length > 5) ? (parseInt(field.slice(5)) || 1) : 1;
+    if (panelNoBaseOne < 1) {
+        panelNoBaseOne = 1;
+    }
 
     // if we don't have enough panels, this should get us the panel with the highest
     // available panel number.
