@@ -97,8 +97,11 @@ function getEnabledAppletDefinitions() {
 }
 
 function panelFieldToPanel(field) {
-    let panelNO =  parseInt(field.slice(5));
-    return Main.layoutManager.getPanel(panelNO - 1, true); // base 1
+    let panelNoBaseOne =  (field && field.length > 5) ? (parseInt(field.slice(5)) || 0) : 1;
+
+    // if we don't have enough panels, this should get us the panel with the highest
+    // available panel number.
+    return Main.layoutManager.getPanel(panelNoBaseOne - 1, true);
 }
 
 function getAppletDefinition(definition) {
@@ -355,7 +358,7 @@ function saveAppletsPositions() {
     }, this);
     let applets = new Array();
     Main.layoutManager.panels.forEach(function(panel, i) {
-        let panel_string = "panel" + i + 1;
+        let panel_string = "panel" + (i + 1);
         for (var j in zones_strings){
             let zone_string = zones_strings[j];
             let zone = panel["_"+zone_string+"Box"];
