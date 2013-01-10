@@ -918,11 +918,11 @@ PopupMenuBase.prototype = {
      * operating the submenu, and stores the ids on @object.
      */
     _connectSubMenuSignals: function(object, menu) {
-        object._subMenuActivateId = menu.connect('activate', Lang.bind(this, function() {
+        menu.connect('activate', Lang.bind(this, function() {
             this.emit('activate');
             this.close(true);
         }));
-        object._subMenuActiveChangeId = menu.connect('active-changed', Lang.bind(this, function(submenu, submenuItem) {
+        menu.connect('active-changed', Lang.bind(this, function(submenu, submenuItem) {
             if (this._activeMenuItem && this._activeMenuItem != submenuItem)
                 this._activeMenuItem.setActive(false);
             this._activeMenuItem = submenuItem;
@@ -931,7 +931,7 @@ PopupMenuBase.prototype = {
     },
 
     _connectItemSignals: function(menuItem) {
-        menuItem._activeChangeId = menuItem.connect('active-changed', Lang.bind(this, function (menuItem, active) {
+        menuItem.connect('active-changed', Lang.bind(this, function (menuItem, active) {
             if (active && this._activeMenuItem != menuItem) {
                 if (this._activeMenuItem)
                     this._activeMenuItem.setActive(false);
@@ -942,7 +942,7 @@ PopupMenuBase.prototype = {
                 this.emit('active-changed', null);
             }
         }));
-        menuItem._sensitiveChangeId = menuItem.connect('sensitive-changed', Lang.bind(this, function(menuItem, sensitive) {
+        menuItem.connect('sensitive-changed', Lang.bind(this, function(menuItem, sensitive) {
             if (!sensitive && this._activeMenuItem == menuItem) {
                 if (!this.actor.navigate_focus(menuItem.actor,
                                                Gtk.DirectionType.TAB_FORWARD,
@@ -953,17 +953,12 @@ PopupMenuBase.prototype = {
                     menuItem.actor.grab_key_focus();
             }
         }));
-        menuItem._activateId = menuItem.connect('activate', Lang.bind(this, function (menuItem, event) {
+        menuItem.connect('activate', Lang.bind(this, function (menuItem, event) {
             this.emit('activate', menuItem);
             this.close(true);
         }));
         menuItem.connect('destroy', Lang.bind(this, function(emitter) {
-            menuItem.disconnect(menuItem._activateId);
-            menuItem.disconnect(menuItem._activeChangeId);
-            menuItem.disconnect(menuItem._sensitiveChangeId);
-            if (menuItem.menu) {
-                menuItem.menu.disconnect(menuItem._subMenuActivateId);
-                menuItem.menu.disconnect(menuItem._subMenuActiveChangeId);
+            if (menuItem._closingId) {
                 this.disconnect(menuItem._closingId);
             }
             if (menuItem == this._activeMenuItem)
@@ -1020,9 +1015,6 @@ PopupMenuBase.prototype = {
         if (menuItem instanceof PopupMenuSection) {
             this._connectSubMenuSignals(menuItem, menuItem);
             menuItem.connect('destroy', Lang.bind(this, function() {
-                menuItem.disconnect(menuItem._subMenuActivateId);
-                menuItem.disconnect(menuItem._subMenuActiveChangeId);
-
                 this.length--;
             }));
         } else if (menuItem instanceof PopupSubMenuMenuItem) {
