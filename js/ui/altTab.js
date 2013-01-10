@@ -201,6 +201,12 @@ AltTabPopup.prototype = {
 
         // Make the initial selection
         if (this._appIcons.length > 0) {
+            // if there is only one window on the current workspace, we should not select a
+            // window belonging to another workspace, since that would entail a workspace
+            // change if the user is doing a quick switch.
+            let forwardWs = this._appIcons[Math.min(1, this._appIcons.length - 1)].window.get_workspace();
+            let backwardWs = this._appIcons[this._appIcons.length - 1].window.get_workspace();
+
             if (binding == 'switch-group') {
                 if (backward) {
                     this._select(0, this._appIcons[0].cachedWindows.length - 1);
@@ -213,15 +219,15 @@ AltTabPopup.prototype = {
             } else if (binding == 'switch-group-backward') {
                 this._select(0, this._appIcons[0].cachedWindows.length - 1);
             } else if (binding == 'switch-windows-backward') {
-                this._select(this._appIcons.length - 1);
+                this._select(backwardWs == global.screen.get_active_workspace() ? this._appIcons.length - 1 : 0);
             } else if (binding == 'no-switch-windows') {
                 this._select(0);
             } else if (this._appIcons.length == 1) {
                 this._select(0);
             } else if (backward) {
-                this._select(this._appIcons.length - 1);
+                this._select(backwardWs == global.screen.get_active_workspace() ? this._appIcons.length - 1 : 0);
             } else {
-                this._select(1);
+                this._select(forwardWs == global.screen.get_active_workspace() ? 1 : 0);
             }
         }
         // There's a race condition; if the user released Alt before
