@@ -427,9 +427,8 @@ Player.prototype = {
         this._trackId = {};
         this._getMetadata();
         this._currentTime = 0;
-        this._getPosition();
 
-        this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
+        let propChangedId = this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
             if (value["PlaybackStatus"])
                 this._setStatus(iface, value["PlaybackStatus"]);
             if (value["Metadata"])
@@ -443,11 +442,16 @@ Player.prototype = {
             }
         }));
 
-        this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
+        let seekedId = this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
             this._setPosition(sender, value);
         }));
 
-        Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
+        this.connect('destroy', Lang.bind(this, function() {
+            this.stopped = true;
+            this._prop.disconnect(propChangedId);
+            this._mediaServerPlayer.disconnect(seekedId);
+        }));
+        this._getPosition();
     },
 
     _getName: function() {
@@ -466,11 +470,15 @@ Player.prototype = {
             this._currentTime = value / 1000000;
             this._updateTimer();
         }
-        if (this._playerStatus == "Playing")
+        if (this._playerStatus == "Playing") {
             this._runTimer();
+        }
     },
 
     _getPosition: function() {
+        if (this.stopped) {
+            return;
+        }
         this._mediaServerPlayer.getPosition(Lang.bind(this,
             this._setPosition
         ));
@@ -478,6 +486,11 @@ Player.prototype = {
     },
 
     _setMetadata: function(sender, metadata) {
+        if (this.stopped) {
+global.logError("setMetadata: " + [this._getName(), this.stopped]);        
+            return;
+        }
+        
         if (metadata["mpris:length"]) {
             // song length in secs
             this._songLength = metadata["mpris:length"] / 1000000;
