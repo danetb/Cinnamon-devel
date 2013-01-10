@@ -766,7 +766,7 @@ SwitcherList.prototype = {
 
         this._items = [];
         this._highlighted = -1;
-        this._separator = null;
+        this._separators = [];
         this._squareItems = squareItems;
         this._minSize = 0;
         this._scrollableRight = true;
@@ -844,7 +844,7 @@ SwitcherList.prototype = {
 
     addSeparator: function () {
         let box = new St.Bin({ style_class: 'separator' });
-        this._separator = box;
+        this._separators.push(box);
         this._list.add_actor(box);
     },
 
@@ -937,9 +937,9 @@ SwitcherList.prototype = {
         let [maxChildMin, maxChildNat] = this._maxChildWidth(forHeight);
 
         let separatorWidth = 0;
-        if (this._separator) {
-            let [sepMin, sepNat] = this._separator.get_preferred_width(forHeight);
-            separatorWidth = sepNat + this._list.spacing;
+        if (this._separators.length) {
+            let [sepMin, sepNat] = this._separators[0].get_preferred_width(forHeight);
+            separatorWidth = Math.max(1, this._separators.length - 1) * (sepNat + this._list.spacing);
         }
 
         let totalSpacing = this._list.spacing * Math.max(1, (this._items.length - 1));
@@ -975,10 +975,10 @@ SwitcherList.prototype = {
         let totalSpacing = this._list.spacing * (this._items.length - 1);
 
         let separatorWidth = 0;
-        if (this._separator) {
-            let [sepMin, sepNat] = this._separator.get_preferred_width(childHeight);
+        if (this._separators.length) {
+            let [sepMin, sepNat] = this._separators[0].get_preferred_width(childHeight);
             separatorWidth = sepNat;
-            totalSpacing += this._list.spacing;
+            totalSpacing += Math.max(1, this._separators.length - 1) * this._list.spacing;
         }
 
         let childWidth = Math.floor(Math.max(0, box.x2 - box.x1 - totalSpacing - separatorWidth) / this._items.length);
@@ -1009,7 +1009,7 @@ SwitcherList.prototype = {
                 children[i].allocate(childBox, flags);
 
                 x += this._list.spacing + childWidth;
-            } else if (children[i] == this._separator) {
+            } else if (this._separators.indexOf(children[i]) != -1) {
                 // We want the separator to be more compact than the rest.
                 childBox.x1 = x;
                 childBox.y1 = 0;
@@ -1112,8 +1112,15 @@ AppSwitcher.prototype = {
 
         this.icons = [];
         this._arrows = [];
-        for (let i = 0; i < workspaceIcons.length; i++)
-            this._addIcon(workspaceIcons[i]);
+        let lastWs = null;
+        workspaceIcons.forEach(function(icon) {
+            let ws = icon.window.get_workspace();
+            if (lastWs != null && ws != lastWs) {
+                this.addSeparator();
+            }
+            lastWs = ws;
+            this._addIcon(icon);
+        }, this);
         if (workspaceIcons.length > 0 && otherIcons.length > 0)
             this.addSeparator();
         for (let i = 0; i < otherIcons.length; i++)
@@ -1140,8 +1147,8 @@ AppSwitcher.prototype = {
         let [iconMinHeight, iconNaturalHeight] = this.icons[j].label.get_preferred_height(-1);
         let iconSpacing = iconNaturalHeight + iconPadding + iconBorder;
         let totalSpacing = this._list.spacing * (this._items.length - 1);
-        if (this._separator)
-           totalSpacing += this._separator.width + this._list.spacing;
+        if (this._separators.length)
+           totalSpacing += Math.max(1, this._separators.length - 1) * (this._separators[0].width + this._list.spacing);
 
         // We just assume the whole screen here due to weirdness happing with the passed width
         let primary = Main.layoutManager.primaryMonitor;
