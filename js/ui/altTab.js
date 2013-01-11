@@ -174,15 +174,37 @@ AltTabPopup.prototype = {
         this._currentApp = 0;
         this._currentWindow = -1;
         
-        let windows = Main.getTabList(); // first, all windows from the current ws
-        let activeIndex = global.screen.get_active_workspace_index();
+        // Find out the currently active window
+        let wsWindows = Main.getTabList();
+        let currentWindow = wsWindows.length > 0 ? wsWindows[0] : null;
+
+        let windows = [];
+        let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
+
+        let activeWsIndex = global.screen.get_active_workspace_index();
         for (let i = 0, numws = global.screen.n_workspaces; numws > 1 && i < numws; ++i) {
-            // pick up windows from all other workspaces, beginning with the next, then wrap around
-            let wsIndex = (i + activeIndex) % numws;
-            if (wsIndex != activeIndex) {
-                windows = windows.concat(Main.getTabList(global.screen.get_workspace_by_index(wsIndex)));
+            let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
+            if (!wlist.length && i == activeWsIndex) {
+                // If the current workspace is empty, it's easiest to insert a placeholder window,
+                // for which purpose the desktop should do fine.
+                wlist = global.get_window_actors().filter(function(realWindow) {
+                    let window = realWindow.metaWindow;
+                    if (window.get_window_type() != Meta.WindowType.DESKTOP) return false;
+                    return window.get_workspace().index() == activeWsIndex;
+                }, this).map(function(realWindow){
+                    return realWindow.metaWindow;
+                },this);
+                currentWindow = wlist[0];
+            }
+
+            windows = windows.concat(wlist);
+            if (i == activeWsIndex && wlist.length) {
+                currentIndex = windows.indexOf(currentWindow);
+                forwardIndex = wlist.length > 1 ? currentIndex + 1 : currentIndex;
+                backwardIndex = wlist.length > 1 ? currentIndex + wlist.length - 1 : currentIndex;
             }
         }
+
         this._appSwitcher = new AppSwitcher(windows, this._showThumbnails, this);
         this.actor.add_actor(this._appSwitcher.actor);
         if (!this._iconsEnabled && !this._thumbnailsEnabled) {
@@ -200,34 +222,26 @@ AltTabPopup.prototype = {
         this.actor.get_allocation_box();
 
         // Make the initial selection
-        if (this._appIcons.length > 0) {
-            // if there is only one window on the current workspace, we should not select a
-            // window belonging to another workspace, since that would entail a workspace
-            // change if the user is doing a quick switch.
-            let forwardWs = this._appIcons[Math.min(1, this._appIcons.length - 1)].window.get_workspace();
-            let backwardWs = this._appIcons[this._appIcons.length - 1].window.get_workspace();
-
+        if (this._appIcons.length > 0 && currentIndex >= 0) {
             if (binding == 'switch-group') {
                 if (backward) {
-                    this._select(0, this._appIcons[0].cachedWindows.length - 1);
+                    this._select(currentIndex, this._appIcons[currentIndex].cachedWindows.length - 1);
                 } else {
-                    if (this._appIcons[0].cachedWindows.length > 1)
-                        this._select(0, 1);
+                    if (this._appIcons[currentIndex].cachedWindows.length > 1)
+                        this._select(currentIndex, 1);
                     else
-                        this._select(0, 0);
+                        this._select(currentIndex, 0);
                 }
             } else if (binding == 'switch-group-backward') {
-                this._select(0, this._appIcons[0].cachedWindows.length - 1);
+                this._select(currentIndex, this._appIcons[currentIndex].cachedWindows.length - 1);
             } else if (binding == 'switch-windows-backward') {
-                this._select(backwardWs == global.screen.get_active_workspace() ? this._appIcons.length - 1 : 0);
+                this._select(backwardIndex);
             } else if (binding == 'no-switch-windows') {
-                this._select(0);
-            } else if (this._appIcons.length == 1) {
-                this._select(0);
+                this._select(currentIndex);
             } else if (backward) {
-                this._select(backwardWs == global.screen.get_active_workspace() ? this._appIcons.length - 1 : 0);
+                this._select(backwardIndex);
             } else {
-                this._select(forwardWs == global.screen.get_active_workspace() ? 1 : 0);
+                this._select(forwardIndex);
             }
         }
         // There's a race condition; if the user released Alt before
