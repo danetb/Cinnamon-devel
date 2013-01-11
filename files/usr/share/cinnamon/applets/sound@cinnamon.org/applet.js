@@ -448,6 +448,10 @@ Player.prototype = {
 
         this.connect('destroy', Lang.bind(this, function() {
             this.stopped = true;
+            if (this.positionTimeoutId) {
+                Mainloop.source_remove(this.positionTimeoutId);
+                this.positionTimeoutId = null;
+            }
             this._prop.disconnect(propChangedId);
             this._mediaServerPlayer.disconnect(seekedId);
         }));
@@ -464,6 +468,11 @@ Player.prototype = {
     },
 
     _setPosition: function(sender, value) {
+        if (this.stopped) {
+            // this callback can be called after we have been destroyed, and there
+            // doesn't seem to be much we can do about it.
+            return;
+        }
         //qmmp was giving -1000 when stopped or not playing, which in turn would give 59:59 in the sound menu
         if (value >= 0) {
             this._stopTimer();
@@ -476,13 +485,10 @@ Player.prototype = {
     },
 
     _getPosition: function() {
-        if (this.stopped) {
-            return;
-        }
         this._mediaServerPlayer.getPosition(Lang.bind(this,
             this._setPosition
         ));
-        Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
+        this.positionTimeoutId = Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
     },
 
     _setMetadata: function(sender, metadata) {
@@ -570,6 +576,9 @@ global.logError("setMetadata: " + [this._getName(), this.stopped]);
     },
 
     _setStatus: function(sender, status) {
+        if (this.stopped) {
+            return;
+        }
         this._playerStatus = status;
         if (status == "Playing") {
             this._playButton.setIcon("media-playback-pause");
