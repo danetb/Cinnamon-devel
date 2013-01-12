@@ -790,55 +790,56 @@ MyApplet.prototype = {
     _init: function(orientation, panel_height) {        
         Applet.Applet.prototype._init.call(this, orientation, panel_height);
         this.actor.set_track_hover(false);
-        this.orientation = orientation;
-        this.dragInProgress = false;
+        try {                    
+            this.orientation = orientation;
+            this.dragInProgress = false;
 
-        this.myactorbox = new MyAppletBox(this);
-        this.leftAlertBox = new MyAppletAlertBox(this);
-        this.rightAlertBox = new MyAppletAlertBox(this);
+            this.myactorbox = new MyAppletBox(this);
+            this.leftAlertBox = new MyAppletAlertBox(this);
+            this.rightAlertBox = new MyAppletAlertBox(this);
 
-        this.myactor = this.myactorbox.actor;
+            this.myactor = this.myactorbox.actor;
 
-        this.actor.add(this.leftAlertBox.actor);
-        this.actor.add(this.myactor);
-        this.actor.add(this.rightAlertBox.actor);
+            this.actor.add(this.leftAlertBox.actor);
+            this.actor.add(this.myactor);
+            this.actor.add(this.rightAlertBox.actor);
 
-        this.actor.reactive = global.settings.get_boolean("panel-edit-mode");
-        this.on_orientation_changed(orientation);
+            this.actor.reactive = global.settings.get_boolean("panel-edit-mode");
+            this.on_orientation_changed(orientation);
 
-        this._windows = new Array();
-        this._alertWindows = new Array();
-        let tracker = Cinnamon.WindowTracker.get_default();
-        tracker.connect('notify::focus-app', Lang.bind(this, this._onFocus));
+            this._windows = new Array();
+            this._alertWindows = new Array();
+            let tracker = Cinnamon.WindowTracker.get_default();
+            tracker.connect('notify::focus-app', Lang.bind(this, this._onFocus));
 
-        this.switchWorkspaceHandler = global.window_manager.connect('switch-workspace',
-                                        Lang.bind(this, this._refreshItems));
-        global.window_manager.connect('minimize',
-                                        Lang.bind(this, this._onMinimize));
-        global.window_manager.connect('maximize',
-                                        Lang.bind(this, this._onMaximize));
-        global.window_manager.connect('unmaximize',
-                                        Lang.bind(this, this._onMaximize));
-        global.window_manager.connect('map',
-                                        Lang.bind(this, this._onMap));
-                                        
-        this._workspaces = [];
-        this._changeWorkspaces();
-        global.screen.connect('notify::n-workspaces',
-                                Lang.bind(this, this._changeWorkspaces));
-        this._urgent_signal = null;
-        global.settings.connect('changed::window-list-applet-alert', Lang.bind(this, this._updateAttentionGrabber));
-        this._updateAttentionGrabber();
-        global.settings.connect('changed::panel-edit-mode', Lang.bind(this, this.on_panel_edit_mode_changed));
+            this.switchWorkspaceHandler = global.window_manager.connect('switch-workspace',
+                                            Lang.bind(this, this._refreshItems));
+            global.window_manager.connect('minimize',
+                                            Lang.bind(this, this._onMinimize));
+            global.window_manager.connect('maximize',
+                                            Lang.bind(this, this._onMaximize));
+            global.window_manager.connect('unmaximize',
+                                            Lang.bind(this, this._onMaximize));
+            global.window_manager.connect('map',
+                                            Lang.bind(this, this._onMap));
+                                            
+            this._workspaces = [];
+            this._changeWorkspaces();
+            global.screen.connect('notify::n-workspaces',
+                                    Lang.bind(this, this._changeWorkspaces));
+            this._urgent_signal = null;
+            global.settings.connect('changed::window-list-applet-alert', Lang.bind(this, this._updateAttentionGrabber));
+            this._updateAttentionGrabber();
+            // this._container.connect('allocate', Lang.bind(Main.panel, this._allocateBoxes)); 
+            global.settings.connect('changed::panel-edit-mode', Lang.bind(this, this.on_panel_edit_mode_changed));
 
-        global.settings.connect('changed::panel-scale-text-icons', this.updatePanelSettings);
-        global.settings.connect('changed::panel-resizable', this.updatePanelSettings);
-        this.updatePanelSettings();
-    },
-
-    updatePanelSettings: function() {
-        g_scaleTextIcons = global.settings.get_boolean('panel-scale-text-icons');
-        g_panelResizable = global.settings.get_boolean('panel-resizable');
+            global.settings.connect('changed::panel-scale-text-icons', this.updatePanelSettings);
+            global.settings.connect('changed::panel-resizable', this.updatePanelSettings);
+            this.updatePanelSettings();
+        }
+        catch (e) {
+            global.logError(e);
+        }
     },
 
     on_orientation_changed: function(orientation) {
@@ -877,6 +878,11 @@ MyApplet.prototype = {
     on_applet_clicked: function(event) {
     },
 
+    updatePanelSettings: function() {
+        g_scaleTextIcons = global.settings.get_boolean('panel-scale-text-icons');
+        g_panelResizable = global.settings.get_boolean('panel-resizable');
+    },
+
     on_panel_edit_mode_changed: function() {
         this.actor.reactive = global.settings.get_boolean("panel-edit-mode");
     }, 
@@ -907,6 +913,11 @@ MyApplet.prototype = {
 
     calculate_alert_positions: function() {
         this._clean_alert_boxes();
+
+        // purge destroyed alert windows
+        this._alertWindows = this._alertWindows.filter(function(alertWindow) {
+            return alertWindow.metaWindow.get_workspace() != null;
+        }, this);
 
         let cur_ws_index = global.screen.get_active_workspace_index();
 
@@ -1014,6 +1025,7 @@ MyApplet.prototype = {
                 break;
             }
         }
+        this.calculate_alert_positions();
     },
     
     _changeWorkspaces: function() {
