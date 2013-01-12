@@ -99,7 +99,7 @@ const MediaServer2PlayerIFace = {
 
 /* global values */
 let icon_path = "/usr/share/cinnamon/theme/";
-let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "qmmp" ];
+let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "qmmp", "pithos" ];
 let support_seek = [ "clementine", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "amarok", "xnoise", "gmusicbrowser", "spotify", "vlc", "beatbox", "qmmp" ];
 /* dummy vars for translation */
 let x = _("Playing");
@@ -427,9 +427,8 @@ Player.prototype = {
         this._trackId = {};
         this._getMetadata();
         this._currentTime = 0;
-        this._getPosition();
 
-        this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
+        let propChangedId = this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
             if (value["PlaybackStatus"])
                 this._setStatus(iface, value["PlaybackStatus"]);
             if (value["Metadata"])
@@ -443,11 +442,16 @@ Player.prototype = {
             }
         }));
 
-        this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
+        let seekedId = this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
             this._setPosition(sender, value);
         }));
 
-        Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
+        this.connect('destroy', Lang.bind(this, function() {
+            this.stopped = true;
+            this._prop.disconnect(propChangedId);
+            this._mediaServerPlayer.disconnect(seekedId);
+        }));
+        this._getPosition();
     },
 
     _getName: function() {
@@ -466,11 +470,15 @@ Player.prototype = {
             this._currentTime = value / 1000000;
             this._updateTimer();
         }
-        if (this._playerStatus == "Playing")
+        if (this._playerStatus == "Playing") {
             this._runTimer();
+        }
     },
 
     _getPosition: function() {
+        if (this.stopped) {
+            return;
+        }
         this._mediaServerPlayer.getPosition(Lang.bind(this,
             this._setPosition
         ));
@@ -478,6 +486,11 @@ Player.prototype = {
     },
 
     _setMetadata: function(sender, metadata) {
+        if (this.stopped) {
+global.logError("setMetadata: " + [this._getName(), this.stopped]);        
+            return;
+        }
+        
         if (metadata["mpris:length"]) {
             // song length in secs
             this._songLength = metadata["mpris:length"] / 1000000;
@@ -891,10 +904,18 @@ MyApplet.prototype = {
     },
 
     _cleanup: function() {
-        if (this._outputTitle) this._outputTitle.destroy();
-        if (this._outputSlider) this._outputSlider.destroy();
-        if (this._inputTitle) this._inputTitle.destroy();
-        if (this._inputSlider) this._inputSlider.destroy();
+        if (this._outputTitle) {
+            this._outputTitle.destroy(); this._outputTitle = 0;
+        }
+        if (this._outputSlider) {
+            this._outputSlider.destroy(); this._outputSlider = 0;
+        }
+        if (this._inputTitle) {
+            this._inputTitle.destroy(); this._inputTitle = 0;
+        }
+        if (this._inputSlider) {
+            this._inputSlider.destroy(); this._inputSlider = 0;
+        }
         this.menu.removeAll();
      },
 

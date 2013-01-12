@@ -20,13 +20,13 @@ const WindowUtils = imports.misc.windowUtils;
 // The maximum size of a thumbnail is 1/8 the width and height of the screen
 let MAX_THUMBNAIL_SCALE = 0.9;
 
-const POINTER_LEAVE_MILLISECONDS_GRACE = 500;
+const POINTER_LEAVE_MILLISECONDS_GRACE = 150;
 const POINTER_ENTER_MILLISECONDS_GRACE = 150;
 const RESCALE_ANIMATION_TIME = 0.2;
 const SLIDE_ANIMATION_TIME = 0.3;
 const INACTIVE_OPACITY = 120;
 const REARRANGE_TIME_ON = 0.3;
-const REARRANGE_TIME_OFF = 0.3 * 2;
+const REARRANGE_TIME_OFF = 0.3 * 3;
 const ICON_OPACITY = Math.round(255 * 0.9);
 const ICON_SIZE = 128;
 const ICON_OFFSET = -5;
@@ -872,6 +872,7 @@ ExpoWorkspaceThumbnail.prototype = {
         this.overviewMode = false;
         const iconSpacing = ICON_SIZE/4;
         let rearrangeTime = force ? REARRANGE_TIME_OFF/2 : REARRANGE_TIME_OFF;
+        let effect = force ? 'easeOutQuad' : 'easeInCirc';
 
         Main.layoutManager.monitors.forEach(function(monitor, monitorIndex) {
             let iconCount = 0;
@@ -889,7 +890,7 @@ ExpoWorkspaceThumbnail.prototype = {
                     y: window.origY,
                     scale_x: 1, scale_y: 1,
                     opacity: window.metaWindow.showing_on_its_workspace() ? 255 : 127,
-                    time: rearrangeTime, transition: 'easeOutQuad'
+                    time: rearrangeTime, transition: effect
                 });
             }, this);
         }, this);

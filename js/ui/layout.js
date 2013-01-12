@@ -13,6 +13,7 @@ const Panel = imports.ui.panel;
 const Tweener = imports.ui.tweener;
 const EdgeFlip = imports.ui.edgeFlip;
 const HotCorner = imports.ui.hotCorner;
+const DeskletManager = imports.ui.deskletManager;
 
 const STARTUP_ANIMATION_TIME = 0.2;
 const KEYBOARD_ANIMATION_TIME = 0.5;
@@ -475,7 +476,8 @@ const defaultParams = {
     visibleInFullscreen: false,
     affectsStruts: false,
     affectsInputRegion: true,
-    addToWindowgroup: false
+    addToWindowgroup: false,
+    doNotAdd: false
 };
 
 function Chrome() {
@@ -524,7 +526,7 @@ Chrome.prototype = {
     addActor: function(actor, params) {
         let actorData = Params.parse(params, defaultParams);
         if (actorData.addToWindowgroup) global.window_group.add_actor(actor);
-        else Main.uiGroup.add_actor(actor);
+        else if (!actorData.doNotAdd) Main.uiGroup.add_actor(actor);
         this._trackActor(actor, params);
     },
 
@@ -623,6 +625,11 @@ Chrome.prototype = {
     },
 
     _actorReparented: function(actor, oldParent) {
+        let i = this._findActor(actor);
+        if (i == -1)
+            return;
+        let actorData = this._trackedActors[i];
+
         let newParent = actor.get_parent();
         if (!newParent)
             this._untrackActor(actor);
