@@ -182,7 +182,7 @@ AltTabPopup.prototype = {
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
 
         let activeWsIndex = global.screen.get_active_workspace_index();
-        for (let i = 0, numws = global.screen.n_workspaces; numws > 1 && i < numws; ++i) {
+        for (let i = 0, numws = global.screen.n_workspaces; i < numws; ++i) {
             let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
             if (!wlist.length && i == activeWsIndex) {
                 // If the current workspace is empty, it's easiest to insert a placeholder window,
