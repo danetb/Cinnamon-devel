@@ -423,9 +423,7 @@ Player.prototype = {
         /* this players don't support seek */
         if (support_seek.indexOf(this._name) == -1)
             this._time.hide();
-        this._getStatus();
         this._trackId = {};
-        this._getMetadata();
         this._currentTime = 0;
 
         let propChangedId = this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
@@ -446,15 +444,27 @@ Player.prototype = {
             this._setPosition(sender, value);
         }));
 
+        let initialTimeoutId = Mainloop.timeout_add(500, Lang.bind(this, function() {
+            // We defer these function calls a little, because they cause asynchronous
+            // behavior that may lead to post-destruction access of UI elements if the player
+            // is removed very quickly after being created (happens when there are more than
+            // one supported player running after a Cinnamon restart).
+            this._getStatus();
+            this._getMetadata();
+            initialTimeoutId = null;
+        }));
         this.connect('destroy', Lang.bind(this, function() {
             this.stopped = true;
             if (this.positionTimeoutId) {
                 Mainloop.source_remove(this.positionTimeoutId);
-                this.positionTimeoutId = null;
+            }
+            if (initialTimeoutId) {
+                Mainloop.source_remove(initialTimeoutId);
             }
             this._prop.disconnect(propChangedId);
             this._mediaServerPlayer.disconnect(seekedId);
         }));
+
         this._getPosition();
     },
 
@@ -492,11 +502,6 @@ Player.prototype = {
     },
 
     _setMetadata: function(sender, metadata) {
-        if (this.stopped) {
-global.logError("setMetadata: " + [this._getName(), this.stopped]);        
-            return;
-        }
-        
         if (metadata["mpris:length"]) {
             // song length in secs
             this._songLength = metadata["mpris:length"] / 1000000;
@@ -576,9 +581,6 @@ global.logError("setMetadata: " + [this._getName(), this.stopped]);
     },
 
     _setStatus: function(sender, status) {
-        if (this.stopped) {
-            return;
-        }
         this._playerStatus = status;
         if (status == "Playing") {
             this._playButton.setIcon("media-playback-pause");
