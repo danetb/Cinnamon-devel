@@ -18,11 +18,6 @@ const DeskletManager = imports.ui.deskletManager;
 const STARTUP_ANIMATION_TIME = 0.2;
 const KEYBOARD_ANIMATION_TIME = 0.5;
 
-const LAYOUT_TRADITIONAL = "traditional";
-const LAYOUT_FLIPPED = "flipped";
-const LAYOUT_CLASSIC = "classic";
-const LAYOUT_CLASSIC_FLIPPED = "classic-flipped";
-
 function LayoutManager() {
     this._init.apply(this, arguments);
 }
@@ -72,16 +67,16 @@ LayoutManager.prototype = {
         this._desktop_layout = global.settings.get_string("desktop-panel-layout");
         let newLayoutString = "";
         
-        if (this._desktop_layout == LAYOUT_FLIPPED) {
+        if (this._desktop_layout == "flipped") {
             newLayoutString = "top,top";
         }
-        else if (this._desktop_layout == LAYOUT_TRADITIONAL) {
+        else if (this._desktop_layout == "traditional") {
             newLayoutString = "bottom,bottom";
         }
-        else if (this._desktop_layout == LAYOUT_CLASSIC) {
+        else if (this._desktop_layout == "classic") {
             newLayoutString = "top,top+bottom,bottom";
         }
-        else if (this._desktop_layout == LAYOUT_CLASSIC_FLIPPED) {
+        else if (this._desktop_layout == "classic-gold") {
             newLayoutString = "bottom,bottom+top,top";
         }
         else {

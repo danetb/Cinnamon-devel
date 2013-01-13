@@ -275,7 +275,7 @@
       <_summary>Panel-layout style</_summary>
       <_description>
        Layout styles: "traditional" (a single panel at the bottom), "flipped" (a single panel at the top),
-       "classic" (main panel at the top, secondary panel at the bottom), "classic-flipped" (main panel at the bottom, secondary panel at the top)
+       "classic" (main panel at the top, secondary panel at the bottom), "classic-gold" (main panel at the bottom, secondary panel at the top)
       </_description>
     </key>
     
