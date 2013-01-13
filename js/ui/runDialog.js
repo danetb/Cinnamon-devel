@@ -29,8 +29,6 @@ const TERMINAL_SCHEMA = 'org.gnome.desktop.default-applications.terminal';
 const EXEC_KEY = 'exec';
 const EXEC_ARG_KEY = 'exec-arg';
 
-const SHOW_COMPLETIONS_KEY = 'run-dialog-show-completions';
-
 const DIALOG_GROW_TIME = 0.1;
 
 function CommandCompleter() {
@@ -253,6 +251,9 @@ __proto__: ModalDialog.ModalDialog.prototype,
         this._history = new History.HistoryManager({ gsettingsKey: HISTORY_KEY,
                                                      entry: this._entryText,
                                                      deduplicate: true });
+        this._history.connect('changed', Lang.bind(this, function() {
+            this._completionBox.hide();
+        }));
         this._entryText.connect('key-press-event', Lang.bind(this, function(o, e) {
             let symbol = e.get_key_symbol();
             if (symbol == Clutter.Return || symbol == Clutter.KP_Enter) {
@@ -299,10 +300,11 @@ __proto__: ModalDialog.ModalDialog.prototype,
                     if (postfix[postfix.length - 1] == '/')
                         this._getCompletion(text + postfix + 'a');
                 }
-                if (!postfix && completions.length > 0 && prefix.length > 2 &&
-                    global.settings.get_boolean(SHOW_COMPLETIONS_KEY)) {
+                if (!postfix && completions.length > 0 && prefix.length > 2) {
                     this._completionBox.set_text(completions.join("\n"));
-                    this._completionBox.show();
+                    if (completions.length > 1) {
+                        this._completionBox.show();
+                    }
                 }
                 return true;
             }
@@ -319,7 +321,7 @@ __proto__: ModalDialog.ModalDialog.prototype,
                     else
                         prefix = text.substr(text.lastIndexOf(' ') + 1);
                     let [postfix, completions] = this._getCompletion(prefix);
-                    if (completions.length > 0) {
+                    if (completions.length > 1) {
                         this._completionBox.set_text(completions.join("\n"));
                     }
                 }));
