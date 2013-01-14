@@ -12,7 +12,8 @@ var makeConnection = function() {
     let target = args.shift();
     let id = target.connect.apply(target, args);
     return {
-        disconnect: function() {target.disconnect(id);}
+        disconnect: function() {target.disconnect(id);},
+        getTarget: function() {return target;}
     };
 };
 
