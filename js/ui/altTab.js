@@ -66,7 +66,7 @@ AltTabPopup.prototype = {
         this._haveModal = false;
         this._modifierMask = 0;
 
-        this._currentApp = 0;
+        this._currentApp = -1;
         this._currentWindow = -1;
         this._thumbnailTimeoutId = 0;
         this._motionTimeoutId = 0;
@@ -140,7 +140,7 @@ AltTabPopup.prototype = {
         // We try to avoid overflowing the screen so we base the resulting size on
         // those calculations
         if (this._thumbnails && this._appIcons.length > 0) {
-            let icon = this._appIcons[this._currentApp].actor;
+            let icon = this._appIcons[0].actor;
             let [posX, posY] = icon.get_transformed_position();
             let thumbnailCenter = posX + icon.width / 2;
             let [childMinWidth, childNaturalWidth] = this._thumbnails.actor.get_preferred_width(-1);
@@ -171,7 +171,7 @@ AltTabPopup.prototype = {
             this._appSwitcher.actor.destroy();
         }
         
-        this._currentApp = 0;
+        this._currentApp = -1;
         this._currentWindow = -1;
         
         // Find out the currently active window
@@ -184,30 +184,17 @@ AltTabPopup.prototype = {
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let i = 0, numws = global.screen.n_workspaces; i < numws; ++i) {
             let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
-
             if (wlist.length && i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates
                     return !window.is_on_all_workspaces();
                 }, this);
             }
-
-            if (!wlist.length && i == activeWsIndex) {
-                // If the current workspace is empty, it's easiest to insert a placeholder window,
-                // for which purpose the desktop should do fine.
-                wlist = global.get_window_actors().filter(function(realWindow) {
-                    let window = realWindow.metaWindow;
-                    if (window.get_window_type() != Meta.WindowType.DESKTOP) return false;
-                    return window.get_workspace().index() == activeWsIndex;
-                }, this).map(function(realWindow){
-                    return realWindow.metaWindow;
-                },this);
-                currentWindow = wlist[0];
-            }
-
             windows = windows.concat(wlist);
             if (i == activeWsIndex && wlist.length) {
                 currentIndex = windows.indexOf(currentWindow);
+                // Quick alt-tabbing (with no use of the switcher) should only
+                // select between the windows of the active workspace.
                 forwardIndex = wlist.length > 1 ? currentIndex + 1 : currentIndex;
                 backwardIndex = wlist.length > 1 ? currentIndex + wlist.length - 1 : currentIndex;
             }
@@ -487,7 +474,7 @@ AltTabPopup.prototype = {
     },
 
     _finish : function() {
-        if (this._appIcons.length > 0) {
+        if (this._appIcons.length > 0 && this._currentApp > -1) {
             let app = this._appIcons[this._currentApp];
             if (this._currentWindow >= 0) {
                 Main.activateWindow(app.cachedWindows[this._currentWindow]);
