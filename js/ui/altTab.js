@@ -140,7 +140,7 @@ AltTabPopup.prototype = {
         // We try to avoid overflowing the screen so we base the resulting size on
         // those calculations
         if (this._thumbnails && this._appIcons.length > 0) {
-            let icon = this._appIcons[0].actor;
+            let icon = this._appIcons[this._currentApp].actor;
             let [posX, posY] = icon.get_transformed_position();
             let thumbnailCenter = posX + icon.width / 2;
             let [childMinWidth, childNaturalWidth] = this._thumbnails.actor.get_preferred_width(-1);
