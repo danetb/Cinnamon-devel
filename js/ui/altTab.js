@@ -564,7 +564,7 @@ AltTabPopup.prototype = {
     },
     
     _doWindowPreview: function() {
-        if (!this._previewEnabled || this._appIcons.length < 1 ||
+        if (!this._previewEnabled || this._appIcons.length < 1 || this._currentApp < 0 ||
             !this._appIcons[this._currentApp].cachedWindows.length)
         {
             return;
