@@ -54,8 +54,11 @@ LayoutManager.prototype = {
         global.settings.connect("changed::panel-bottom-height", Lang.bind(this, this._processPanelSettings));
         global.settings.connect("changed::panel-top-height", Lang.bind(this, this._processPanelSettings));
         global.screen.connect('restacked', Lang.bind(this, this._windowsRestacked));
-        global.screen.connect('monitors-changed',
-                              Lang.bind(this, this._monitorsChanged));
+        global.screen.connect('monitors-changed', Lang.bind(this, function() {
+            // Try to avoid Cinnamon crashing when an external monitor is added,
+            // by deferring the work a few precious seconds.
+            Mainloop.timeout_add(3000, Lang.bind(this, this._monitorsChanged));
+        }));
         global.window_manager.connect('switch-workspace',
                                       Lang.bind(this, this._windowsRestacked));
     },
@@ -299,7 +302,6 @@ LayoutManager.prototype = {
     _monitorsChanged: function() {
         this._updateMonitors();
         this._updateBoxes();
-        this._updateHotCorners();
         this.emit('monitors-changed');
     },
 
