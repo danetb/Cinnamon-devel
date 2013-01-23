@@ -607,6 +607,19 @@ AltTabPopup.prototype = {
             }
             previewClones.lower(this._appSwitcher.actor);
 
+            // Show the preview with a slight color tint, to make it easier to
+            // differentiate from a "real" window.
+            let cover = new St.Bin();
+            previewClones.add_actor(cover);
+            let fc = clones[0].actor;
+            childBox.x1 = fc.x;
+            childBox.x2 = fc.x + fc.width;
+            childBox.y1 = fc.y;
+            childBox.y2 = fc.y + fc.height;
+            cover.allocate(childBox, 0);
+            fc.lower(cover);
+            cover.style = "background-color: rgba(255,0,0,0.1)";
+
             this._clearPreview();
             this._previewClones = previewClones;
 
