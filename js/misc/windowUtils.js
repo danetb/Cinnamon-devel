@@ -27,6 +27,7 @@ function createWindowClone(metaWindow, size, withTransients, withPositions) {
     if (withTransients) {
       metaWindow.foreach_transient(function(win) {
         let metaWindowActor = win.get_compositor_private();
+        if (!metaWindowActor) return;
         texture = metaWindowActor.get_texture();
         [width, height] = metaWindowActor.get_size();
         [x, y] = metaWindowActor.get_position();
