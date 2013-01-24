@@ -1106,7 +1106,7 @@ AppIcon.prototype = {
                 clone.actor.set_position(clone.x, clone.y);
             }
             let [width, height] = clones[0].actor.get_size();
-            clones[0].actor.set_position(0, 0);
+            clones[0].actor.set_position(Math.floor((size - width)/2), 0);
             let isize = Math.max(Math.ceil(size/4*3), iconSizes[iconSizes.length - 1]);
             let icon = this.app ?
                 this.app.create_icon_texture(isize) :
@@ -1114,7 +1114,7 @@ AppIcon.prototype = {
                               icon_type: St.IconType.FULLCOLOR,
                               icon_size: isize });
             this.icon.add_actor(icon);
-            icon.set_position(Math.floor((size - isize)/2), Math.floor((size - isize)/2));
+            icon.set_position(Math.floor((size - isize)/2), size - isize);
         }
         else {
             this.icon = this.app ?
