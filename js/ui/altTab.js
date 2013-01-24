@@ -1025,7 +1025,8 @@ SwitcherList.prototype = {
             if (this._squareItems)
                 childWidth = childHeight;
             else {
-                let [childMin, childNat] = children[0].get_preferred_width(childHeight);
+                let ixxi = (this._highlighted + this._items.length) % this._items.length;
+                let [childMin, childNat] = this._items[ixxi].get_preferred_width(childHeight);
                 childWidth = childMin;
             }
         }
