@@ -572,6 +572,7 @@ AltTabPopup.prototype = {
 
         let showPreview = function() {
             this._displayPreviewTimeoutId = null;
+            if (this._currentApp < 0) {return;}
 
             let childBox = new Clutter.ActorBox();
 
