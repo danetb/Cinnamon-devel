@@ -530,24 +530,11 @@ AltTabPopup.prototype = {
             }
             previewClones.lower(this._appSwitcher.actor);
 
-            // Show the preview with a slight color tint, to make it easier to
-            // differentiate from a "real" window.
-            let cover = new St.Bin();
-            previewClones.add_actor(cover);
-            let fc = clones[0].actor;
-            childBox.x1 = fc.x;
-            childBox.x2 = fc.x + fc.width;
-            childBox.y1 = fc.y;
-            childBox.y2 = fc.y + fc.height;
-            cover.allocate(childBox, 0);
-            fc.lower(cover);
-            cover.style = "background-color: rgba(255,0,0,0.1)";
-
             this._clearPreview();
             this._previewClones = previewClones;
 
             if (!this._previewBackdrop) {
-                let backdrop = this._previewBackdrop = new St.Bin({style_class: 'switcher-preview-backdrop'});
+                let backdrop = this._previewBackdrop = new St.Bin();
                 this.actor.add_actor(backdrop);
                 // Make sure that the backdrop does not overlap the switcher.
                 backdrop.lower(this._appSwitcher.actor);
@@ -557,7 +544,7 @@ AltTabPopup.prototype = {
                 childBox.y1 = this.actor.y;
                 childBox.y2 = this.actor.y + this.actor.height;
                 backdrop.allocate(childBox, 0);
-                backdrop.opacity = 255;
+                backdrop.style = "background-color: rgba(0,0,0,0.9)";
             }
         }; // showPreview
 
