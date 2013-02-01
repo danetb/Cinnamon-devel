@@ -317,7 +317,7 @@ MyApplet.prototype = {
         this._proxy.GetRemote('Icon', Lang.bind(this, function(icon, error) {
             if (icon) {    
                 let gicon = Gio.icon_new_for_string(icon);
-                this._applet_icon.gicon = gicon;
+                this._appletIcon.gicon = gicon;
                 this.actor.show();
             } else {
                 this.menu.close();
