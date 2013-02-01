@@ -124,8 +124,8 @@ Applet.prototype = {
             this.finalizeContextMenu();
         }));
 
-	// Backward compatibility
-	this._applet_context_menu = this.appletContextMenu;
+    // Backward compatibility
+    this._applet_context_menu = this._appletContextMenu;
     },
     
     _setAppletReactivity: function() {
@@ -183,7 +183,6 @@ Applet.prototype = {
         // Backward compatibility
         if (this.on_applet_clicked) {
             this.on_applet_clicked(event);
-            global.log("on_applet_clicked is deprecated. Use onAppletClicked instead");
         }
     },
     
@@ -191,7 +190,6 @@ Applet.prototype = {
         // Backward compatibility
         if (this.on_applet_added_to_panel) {
             this.on_applet_added_to_panel();
-            global.log("on_applet_added_to_panel is deprecated. Use onAppletAddedToPanel instead");
         }
     },
 
@@ -202,7 +200,6 @@ Applet.prototype = {
         // Backward compatibility
         if (this.on_applet_removed_from_panel) {
             this.on_applet_removed_from_panel();
-            global.log("on_applet_removed_from_panel is deprecated. use onAppletRemovedFromPamel instead");
             }
     },
 
@@ -243,7 +240,6 @@ Applet.prototype = {
     onOrientationChanged: function(event) {
         // Backward compatibility
         if (this.on_orientation_changed) {
-            global.log("on_orientation_changed is deprecated. Use onOrientationChanged instead");
             this.on_orientation_changed(event);
         }
         // Implemented by Applets        
@@ -259,7 +255,6 @@ Applet.prototype = {
     onPanelHeightChanged: function() {
         // Backward compatibility
         if (this.on_panel_height_changed) {
-            global.log("on_panel_height_changed is deprecated. Use onPanelHeightChanged instead");
             this.on_panel_height_changed();
         }
         // Implemented by Applets
@@ -290,7 +285,6 @@ Applet.prototype = {
 
     // Backward compatibility
     set_applet_tooltip: function (text) {
-        global.log("set_applet_tooltip is deprecated. Use setAppletTooltip instead");
         this.setAppletTooltip(text);
     }
 };
@@ -373,29 +367,25 @@ IconApplet.prototype = {
 
     // Backward compatibility
     set_applet_icon_name: function(icon_name) {
-        global.log("set_applet_icon_name is deprecated. Use setAppletIconName instead");
         this.setAppletIconName(icon_name);
     },
 
     set_applet_icon_symbolic_name: function (icon_name) {
-        global.log("set_applet_icon_symbolic_name is deprecated. Use setAppletIconSymbolicName instead");
         this.setAppletIconSymbolicName(icon_name);
     },
 
     set_applet_icon_path: function (icon_path) {
-        global.log("set_applet_icon_path is deprecated. Use setAppletIconPath instead");
         this.setAppletIconPath(icon_path);
     }
 };
-
 function initTextAppletCommon(proto) {
     return {
         __proto__: proto,
 
         _init: function(orientation, panelHeight) {
-            Applet.prototype._init.call(this, orientation, panelHeight);
-            this._appletLabel = new St.Label({ reactive: true, track_hover: true, style_class: 'applet-label'});
-            this._label_height = (this._panelHeight / DEFAULT_PANEL_HEIGHT) * PANEL_FONT_DEFAULT_HEIGHT;
+            proto._init.call(this, orientation, panelHeight);
+            this._applet_label = this._appletLabel = new St.Label({ reactive: true, track_hover: true, style_class: 'applet-label'});
+            this._label_height = this._labelHeight = (this._panelHeight / DEFAULT_PANEL_HEIGHT) * PANEL_FONT_DEFAULT_HEIGHT;
             this._appletLabel.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
             this.actor.add(this._appletLabel, { y_align: St.Align.MIDDLE, y_fill: false });    
         },
@@ -406,8 +396,7 @@ function initTextAppletCommon(proto) {
 
         // Backward compatibility
         set_applet_label: function(text){
-	    global.log("set_applet_label is depreacted. Use setAppletIcon instead");
-	    this.setAppletLabel(text);
+            this.setAppletLabel(text);
         }
     };
  };
@@ -425,9 +414,8 @@ function TextIconApplet() {
 TextIconApplet.prototype = initTextAppletCommon(IconApplet.prototype);
     // Backward compatibility
 TextIconApplet.prototype.hide_applet_icon = function () {
-    global.log("hide_applet_icon is deprecated. Use hideAppletIcon instead");
-	this.hideAppletIcon();
+    this.hideAppletIcon();
 };
 TextIconApplet.prototype.hideAppletIcon = function () {
-        this._appletIconBox.child = null;
+    this._appletIconBox.child = null;
 };
