@@ -166,7 +166,7 @@ WindowManager.prototype = {
         if (!Main.messageTray) {
             return;
         }
-        let source = window._mtSource = new MessageTray.Source();
+        let source = window._mtSource = new MessageTray.Source(window.title);
         window._mtSource.connect('destroy', Lang.bind(this, function() {
             delete window._mtSource;
         }));
@@ -238,6 +238,7 @@ WindowManager.prototype = {
             if (timeoutId) {
                 Mainloop.source_remove(timeoutId);
             }
+            window = null;
             notification = null;
         };
 
