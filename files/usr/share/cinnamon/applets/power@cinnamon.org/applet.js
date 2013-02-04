@@ -145,7 +145,7 @@ MyApplet.prototype = {
             this.menu = new Applet.AppletPopupMenu(this, orientation);
             this.menuManager.addMenu(this.menu);            
             
-            this.set_applet_icon_symbolic_name('battery-missing');            
+            this.setAppletIconSymbolicName('battery-missing');            
             this._proxy = new PowerManagerProxy(DBus.session, BUS_NAME, OBJECT_PATH);
             this._smProxy = new SettingsManagerProxy(DBus.session, BUS_NAME, OBJECT_PATH);
             
@@ -211,11 +211,11 @@ MyApplet.prototype = {
         }
     },
     
-    on_applet_removed_from_panel: function(event) {
+    onAppletRemovedFromPanel: function(event) {
         this.connector.destroy();   
     },
 
-    on_applet_clicked: function(event) {
+    onAppletClicked: function(event) {
         this.menu.toggle();        
     },
 
@@ -271,7 +271,7 @@ MyApplet.prototype = {
                     } else
                         timestring = ngettext("%d minute remaining", "%d minutes remaining", minutes).format(minutes);
                     this._batteryItem.label.text = timestring;
-                    this.set_applet_tooltip(timestring);
+                    this.setAppletTooltip(timestring);
                 }
                 this._primaryPercentage.text = C_("percent of battery remaining", "%d%%").format(Math.round(percentage));
                 this._batteryItem.actor.show();
@@ -300,7 +300,7 @@ MyApplet.prototype = {
                     continue;
 
                 let item = new DeviceItem (devices[i]);
-                this.set_applet_tooltip(item._label.text);
+                this.setAppletTooltip(item._label.text);
                 this._deviceItems.push(item);
                 this.menu.addMenuItem(item, this._otherDevicePosition + position);
                 position++;
@@ -313,7 +313,7 @@ MyApplet.prototype = {
     },
 
     _devicesChanged: function() {
-        this.set_applet_icon_symbolic_name('battery-missing');
+        this.setAppletIconSymbolicName('battery-missing');
         this._proxy.GetRemote('Icon', Lang.bind(this, function(icon, error) {
             if (icon) {    
                 let gicon = Gio.icon_new_for_string(icon);

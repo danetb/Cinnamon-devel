@@ -124,8 +124,8 @@ Applet.prototype = {
             this.finalizeContextMenu();
         }));
 
-    // Backward compatibility
-    this._applet_context_menu = this._appletContextMenu;
+	// Backward compatibility
+	this._applet_context_menu = this._appletContextMenu;
     },
     
     _setAppletReactivity: function() {

@@ -768,7 +768,7 @@ MyApplet.prototype = {
         
         try {                    
             this.connector = new Connector.Connector();
-            this.set_applet_tooltip(_("Menu"));
+            this.setAppletTooltip(_("Menu"));
                                     
             this.menuManager = new PopupMenu.PopupMenuManager(this);
             this.menu = new Applet.AppletPopupMenu(this, orientation);
@@ -807,10 +807,10 @@ MyApplet.prototype = {
                 this._updateIcon();
             })); 
             
-            this.set_applet_label(_("Menu"));                                            
+            this.setAppletLabel(_("Menu"));                                            
             let menuLabel = global.settings.get_string("menu-text");
             if (menuLabel != "Menu") {
-                this.set_applet_label(menuLabel);                 
+                this.setAppletLabel(menuLabel);                 
             } 
             this.connector.addConnection(global.settings, "changed::menu-text", Lang.bind(this, function() {
                     this.set_applet_label(global.settings.get_string("menu-text"));
@@ -859,11 +859,11 @@ MyApplet.prototype = {
             this.connector.addConnection(this.RecentManager, 'changed', Lang.bind(this, this._refreshApps));
 
             this.edit_menu_item = new Applet.MenuItem(_("Edit menu"), Gtk.STOCK_EDIT, Lang.bind(this, this._launch_editor));
-            this._applet_context_menu.addMenuItem(this.edit_menu_item);
+            this._appletContextMenu.addMenuItem(this.edit_menu_item);
             let settings_menu_item = new Applet.MenuItem(_("Menu settings"), null, function() {
                 Util.spawnCommandLine("cinnamon-settings menu");
             });
-            this._applet_context_menu.addMenuItem(settings_menu_item);
+            this._appletContextMenu.addMenuItem(settings_menu_item);
 
             this._fileFolderAccessActive = false;
 
@@ -904,7 +904,7 @@ MyApplet.prototype = {
         Util.spawnCommandLine("cinnamon-menu-editor");
     },
     
-    on_applet_clicked: function(event) {
+    onAppletClicked: function(event) {
         this.menu.toggle();     
     },        
            
@@ -965,7 +965,7 @@ MyApplet.prototype = {
     _updateIcon: function(){
         let icon_file = global.settings.get_string("menu-icon");
         try{
-           this.set_applet_icon_path(icon_file);               
+           this.setAppletIconPath(icon_file);               
         }catch(e){
            global.logWarning("Could not load icon file \""+icon_file+"\" for menu button");
         }

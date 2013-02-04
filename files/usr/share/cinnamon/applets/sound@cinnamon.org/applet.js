@@ -99,7 +99,7 @@ const MediaServer2PlayerIFace = {
 
 /* global values */
 let icon_path = "/usr/share/cinnamon/theme/";
-let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "pithos", "gnome-mplayer" ];
+let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "pithos", "gnome-mplayer", "nuvolaplayer" ];
 let support_seek = [ "clementine", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "amarok", "xnoise", "gmusicbrowser", "spotify", "vlc", "beatbox", "gnome-mplayer" ];
 /* dummy vars for translation */
 let x = _("Playing");
@@ -746,7 +746,7 @@ MyApplet.prototype = {
             this.menu = new Applet.AppletPopupMenu(this, orientation);
             this.menuManager.addMenu(this.menu);
 
-            this.set_applet_icon_symbolic_name('audio-x-generic');
+            this.setAppletIconSymbolicName('audio-x-generic');
 
             // menu not showed by default
             this._players = {};
@@ -780,8 +780,8 @@ MyApplet.prototype = {
 
             this.mute_out_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute output"), false);
             this.mute_in_switch = new PopupMenu.PopupSwitchMenuItem(_("Mute input"), false);
-            this._applet_context_menu.addMenuItem(this.mute_out_switch);
-            this._applet_context_menu.addMenuItem(this.mute_in_switch);
+            this._appletContextMenu.addMenuItem(this.mute_out_switch);
+            this._appletContextMenu.addMenuItem(this.mute_in_switch);
             this.mute_out_switch.connect('toggled', Lang.bind(this, this._toggle_out_mute));
             this.mute_in_switch.connect('toggled', Lang.bind(this, this._toggle_in_mute));
 
@@ -796,13 +796,13 @@ MyApplet.prototype = {
         }
     },
 
-    on_applet_removed_from_panel : function() {
+    onAppletRemovedFromPanel : function() {
         if (this._iconTimeoutId) {
             Mainloop.source_remove(this._iconTimeoutId);
         }
     },
 
-    on_applet_clicked: function(event) {
+    onAppletClicked: function(event) {
         this.menu.toggle();
     },
 
@@ -867,14 +867,14 @@ MyApplet.prototype = {
 
     setIconName: function(icon) {
         this._icon_name = icon;
-        this.set_applet_icon_symbolic_name(icon);
+        this.setAppletIconSymbolicName(icon);
         if (this._nbPlayers()>0) {
             if (this._iconTimeoutId) {
                 Mainloop.source_remove(this._iconTimeoutId);
             }
             this._iconTimeoutId = Mainloop.timeout_add(3000, Lang.bind(this, function() {
                 this._iconTimeoutId = null;
-                this.set_applet_icon_symbolic_name(this['_output'].is_muted ? 'audio-volume-muted' : 'audio-x-generic');
+                this.setAppletIconSymbolicName(this['_output'].is_muted ? 'audio-volume-muted' : 'audio-x-generic');
             }));
         }
     },
@@ -1030,13 +1030,13 @@ MyApplet.prototype = {
             if (muted) {
                 this.setIconName('audio-volume-muted');
                 this._outputTitle.setIcon('audio-volume-muted');
-                this.set_applet_tooltip(_("Volume") + ": 0%");
+                this.setAppletTooltip(_("Volume") + ": 0%");
                 this._outputTitle.setText(_("Volume") + ": 0%");
                 this.mute_out_switch.setToggleState(true);
             } else {
                 this.setIconName(this._volumeToIcon(this._output.volume));
                 this._outputTitle.setIcon(this._volumeToIcon(this._output.volume));
-                this.set_applet_tooltip(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
+                this.setAppletTooltip(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
                 this._outputTitle.setText(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
                 this.mute_out_switch.setToggleState(false);
             }
@@ -1056,7 +1056,7 @@ MyApplet.prototype = {
         if (property == '_output' && !this._output.is_muted) {
             this._outputTitle.setIcon(this._volumeToIcon(this._output.volume));
             this.setIconName(this._volumeToIcon(this._output.volume));
-            this.set_applet_tooltip(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
+            this.setAppletTooltip(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
             this._outputTitle.setText(_("Volume") + ": " + Math.floor(this._output.volume / this._volumeMax * 100) + "%");
         }
     },
