@@ -345,6 +345,27 @@ AltTabPopup.prototype = {
         return mod(this._currentApp - 1, this._appIcons.length);
     },
 
+    _toggleZoom : function() {
+        if (this._selectTimeoutId) {Mainloop.source_remove(this._selectTimeoutId);}
+        this._selectTimeoutId = Mainloop.idle_add(Lang.bind(this, function() {
+            this._selectTimeoutId = null;
+            if (this._zoomedOut) {
+                this._zoomedOut = false;
+                this._numPrimaryItems = this._numPrimaryItems_Orig;
+            }
+            else {
+                this._zoomedOut = true;
+                this._numPrimaryItems = this._appIcons.length - 1;
+            }
+            let current = this._currentApp; // save before re-creating the app switcher
+            let windows = this._appIcons.map(function(appIcon) {return appIcon.window;});
+            this._createAppswitcher(windows);
+            if (current >= 0) {
+                Mainloop.idle_add(Lang.bind(this, this._select, current)); // async refresh
+            }
+        })); // async refresh
+    },
+
     _keyPressEvent : function(actor, event) {
         let findFirstWorkspaceWindow = Lang.bind(this, function(startIndex) {
             let wsCurIx = this._appIcons[startIndex].window.get_workspace().index();
@@ -393,21 +414,8 @@ AltTabPopup.prototype = {
             this.destroy();
         } else if (keysym == Clutter.KEY_space && !this._persistent) {
             this._persistent = true;
-        } else if (keysym == Clutter.z) { // toogle zoom
-            if (this._zoomedOut) {
-                this._zoomedOut = false;
-                this._numPrimaryItems = this._numPrimaryItems_Orig;
-            }
-            else {
-                this._zoomedOut = true;
-                this._numPrimaryItems = this._appIcons.length - 1;
-            }
-            let current = this._currentApp;
-            let windows = this._appIcons.map(function(appIcon) {
-                return appIcon.window;
-            });
-            this._createAppswitcher(windows);
-            Mainloop.idle_add(Lang.bind(this, this._select, current)); // async refresh
+        } else if (keysym == Clutter.z) {
+            this._toggleZoom();
         } else if (keysym == Clutter.h) { // toggle hide
             if (this._hiding) {
                 this._hiding = false;
