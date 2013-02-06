@@ -205,9 +205,9 @@ MyApplet.prototype = {
         if (!this._blinking)
             return;
         if (this._blink_toggle) {
-            this._applet_icon_box.child = this._crit_icon;
+            this._appletIconBox.child = this._crit_icon;
         } else {
-            this._applet_icon_box.child = this._alt_crit_icon;
+            this._appletIconBox.child = this._alt_crit_icon;
         }
         this._blink_toggle = !this._blink_toggle;
         Mainloop.timeout_add_seconds(1, Lang.bind(this, this.critical_blink));
