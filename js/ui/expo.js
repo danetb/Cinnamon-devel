@@ -116,7 +116,7 @@ Expo.prototype = {
         this._group.connect('key-press-event',
             Lang.bind(this, function(actor, event) {
                 if (this._shown) {
-                    if (this._expo.handleKeyPressEvent(actor, event)) {
+                    if (this._expo.handleKeyPressReleaseEvent(actor, event, false)) {
                         return true;
                     }
                     let symbol = event.get_key_symbol();
@@ -142,6 +142,9 @@ Expo.prototype = {
         this._group.connect('key-release-event',
             Lang.bind(this, function(actor, event) {
                 if (this._shown) {
+                    if (this._expo.handleKeyPressReleaseEvent(actor, event, true)) {
+                        return true;
+                    }
                     let symbol = event.get_key_symbol();
                     if (symbol === Clutter.plus || symbol === Clutter.Insert) {
                         if (this._workspaceOperationPending) {

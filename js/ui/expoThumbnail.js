@@ -36,6 +36,24 @@ const WINDOW_DND_SIZE = 256;
 
 const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
 
+let g_viewAsGrid = null;
+function getViewAsGrid() {
+    return g_viewAsGrid;
+}
+function setViewAsGrid(asGrid) {
+    global.settings.set_boolean("workspace-expo-view-as-grid", asGrid);
+    g_viewAsGrid = asGrid;
+}
+
+{
+    var fetchAsGrid = function() {
+        g_viewAsGrid = global.settings.get_boolean("workspace-expo-view-as-grid");
+    };
+
+    global.settings.connect("changed::workspace-expo-view-as-grid", fetchAsGrid);
+    fetchAsGrid();
+}
+
 // persistent throughout session
 var forceOverviewMode = false;
 
@@ -1145,6 +1163,17 @@ ExpoThumbnailsBox.prototype = {
         }));
     },
 
+    toggleGridMode: function() {
+        let [cols, rows] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
+        setViewAsGrid(!getViewAsGrid());
+        let [cols2, rows2] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
+        if (cols != cols2) {
+            // force a reallocation, if necessary
+            this.actor.hide();
+            this.actor.show();
+        }
+    },
+
     show: function() {
         this.connector.addConnection(global.window_manager, 'switch-workspace',
                                           Lang.bind(this, this.activeWorkspaceChanged));
@@ -1179,29 +1208,37 @@ ExpoThumbnailsBox.prototype = {
         global.stage.set_key_focus(this.actor);
     },
 
-    handleKeyPressEvent: function(actor, event) {
+    handleKeyPressReleaseEvent: function(actor, event, released) {
         let modifiers = Cinnamon.get_event_state(event);
         let ctrlAltMask = Clutter.ModifierType.CONTROL_MASK | Clutter.ModifierType.MOD1_MASK;
         let symbol = event.get_key_symbol();
-        if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
-            || symbol === Clutter.KP_Enter)
-        {
-            this.activateSelectedWorkspace();
-            return true;
+        if (!released) {
+            if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
+                || symbol === Clutter.KP_Enter)
+            {
+                this.activateSelectedWorkspace();
+                return true;
+            }
+            if (symbol === Clutter.F2) {
+                this.editWorkspaceTitle();
+                return true;
+            }
+            if (modifiers & ctrlAltMask) {
+                return false;
+            }
+            return this.selectNextWorkspace(symbol);
         }
-        if (symbol === Clutter.F2) {
-            this.editWorkspaceTitle();
-            return true;
+        else if (released) {
+            if ((symbol === Clutter.o || symbol === Clutter.O) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+                this.toggleGlobalOverviewMode();
+                return true;
+            }
+            if ((symbol === Clutter.g || symbol === Clutter.G) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+                this.toggleGridMode();
+                return true;
+            }
         }
-
-        if ((symbol === Clutter.o || symbol === Clutter.O) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
-            this.toggleGlobalOverviewMode();
-            return true;
-        }
-        if (modifiers & ctrlAltMask) {
-            return false;
-        }
-        return this.selectNextWorkspace(symbol);
+        return false;
     },
 
     editWorkspaceTitle: function() {
@@ -1506,7 +1543,7 @@ ExpoThumbnailsBox.prototype = {
     },
 
     getNumberOfColumnsAndRows: function(nWorkspaces) {
-        let asGrid  = global.settings.get_boolean("workspace-expo-view-as-grid");
+        let asGrid  = getViewAsGrid();
         let nColumns = asGrid ? Math.ceil(Math.sqrt(nWorkspaces)) : nWorkspaces;
         let nRows = Math.ceil(nWorkspaces/nColumns);
         
