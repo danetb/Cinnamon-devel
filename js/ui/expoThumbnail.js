@@ -1167,7 +1167,16 @@ ExpoThumbnailsBox.prototype = {
         let [cols, rows] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
         setViewAsGrid(!getViewAsGrid());
         let [cols2, rows2] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
-        if (cols != cols2) {
+        if (cols != cols2 && !this.zoomMode) {
+            // force a reallocation, if necessary
+            this.actor.hide();
+            this.actor.show();
+        }
+    },
+
+    toggleZoomMode: function() {
+        this.zoomMode = !this.zoomMode;
+        if (this.thumbnails.length > 1) {
             // force a reallocation, if necessary
             this.actor.hide();
             this.actor.show();
@@ -1229,12 +1238,16 @@ ExpoThumbnailsBox.prototype = {
             return this.selectNextWorkspace(symbol);
         }
         else if (released) {
-            if ((symbol === Clutter.o || symbol === Clutter.O) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+            if ((symbol === Clutter.o || symbol === Clutter.O)) {
                 this.toggleGlobalOverviewMode();
                 return true;
             }
-            if ((symbol === Clutter.g || symbol === Clutter.G) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+            if ((symbol === Clutter.g || symbol === Clutter.G)) {
                 this.toggleGridMode();
+                return true;
+            }
+            if ((symbol === Clutter.z || symbol === Clutter.Z)) {
+                this.toggleZoomMode();
                 return true;
             }
         }
@@ -1638,7 +1651,7 @@ ExpoThumbnailsBox.prototype = {
         let extraHeight = thTitleHeight + thTitleTopPadding + thTitleBottomPadding + thTitleMargin + thTitleBorderHeight;
         
         // Compute the scale we'll need once everything is updated
-        let nWorkspaces = this.thumbnails.length;
+        let nWorkspaces = this.zoomMode ? 1 : this.thumbnails.length;
         let [nColumns, nRows] = this.getNumberOfColumnsAndRows(nWorkspaces);
         let totalSpacingX = (nColumns - 1) * spacing;
         let availX = (box.x2 - box.x1) - totalSpacingX - (spacing * 2) ;
@@ -1686,56 +1699,63 @@ ExpoThumbnailsBox.prototype = {
 
         let x;
         let y = spacing + Math.floor((availY - nRows * thumbnailHeight) / 2);
+        let count = 0;
         for (let i = 0; i < this.thumbnails.length; i++) {
-            let column = i % nColumns;
-            let row = Math.floor(i / nColumns);
-            let cItemsInRow = Math.min(this.thumbnails.length - (row * nColumns), nColumns);
-            x = column > 0 ? x : calcPaddingX(cItemsInRow);
-            let rowMultiplier = row + 1;
-
             let thumbnail = this.thumbnails[i];
+            if (!this.zoomMode || i == this.kbThumbnailIndex) {
+                let column = count % nColumns;
+                let row = Math.floor(count / nColumns);
+                let cItemsInRow = Math.min(nWorkspaces - (row * nColumns), nColumns);
+                x = column > 0 ? x : calcPaddingX(cItemsInRow);
+                let rowMultiplier = row + 1;
 
-            // We might end up with thumbnailHeight being something like 99.33
-            // pixels. To make this work and not end up with a gap at the bottom,
-            // we need some thumbnails to be 99 pixels and some 100 pixels height;
-            // we compute an actual scale separately for each thumbnail.
-            let x1 = Math.round(x + (thumbnailWidth * thumbnail.slidePosition / 2));
-            let x2 = Math.round(x + thumbnailWidth);
+                // We might end up with thumbnailHeight being something like 99.33
+                // pixels. To make this work and not end up with a gap at the bottom,
+                // we need some thumbnails to be 99 pixels and some 100 pixels height;
+                // we compute an actual scale separately for each thumbnail.
+                let x1 = Math.round(x + (thumbnailWidth * thumbnail.slidePosition / 2));
+                let x2 = Math.round(x + thumbnailWidth);
 
-            let y1, y2;
-            
-            y1 = y;
-            y2 = y1 + thumbnailHeight;
+                let [y1, y2] = [y, y + thumbnailHeight];
 
-            // Allocating a scaled actor is funny - x1/y1 correspond to the origin
-            // of the actor, but x2/y2 are increased by the *unscaled* size.
-            childBox.x1 = x1;
-            childBox.x2 = x1 + portholeWidth;
-            childBox.y1 = y1;
-            childBox.y2 = y1 + portholeHeight;
+                // Allocating a scaled actor is funny - x1/y1 correspond to the origin
+                // of the actor, but x2/y2 are increased by the *unscaled* size.
+                childBox.x1 = x1;
+                childBox.x2 = x1 + portholeWidth;
+                childBox.y1 = y1;
+                childBox.y2 = y1 + portholeHeight;
 
-            let scale = this._scale * (1 - thumbnail.slidePosition);
-            thumbnail.actor.set_scale(scale, scale);
-            thumbnail.actor.allocate(childBox, flags);  
+                let scale = this._scale * (1 - thumbnail.slidePosition);
+                thumbnail.actor.set_scale(scale, scale);
+                thumbnail.actor.allocate(childBox, flags);  
 
-            let framethemeNode = thumbnail.frame.get_theme_node();
-            let borderWidth = framethemeNode.get_border_width(St.Side.BOTTOM);
-            childBox.x1 = x1 - borderWidth;
-            childBox.x2 = x2 + borderWidth;
-            childBox.y1 = y1 - borderWidth;
-            childBox.y2 = y2 + borderWidth;
-            thumbnail.frame.set_scale((1 - thumbnail.slidePosition), (1 - thumbnail.slidePosition));
-            thumbnail.frame.allocate(childBox, flags);
+                let framethemeNode = thumbnail.frame.get_theme_node();
+                let borderWidth = framethemeNode.get_border_width(St.Side.BOTTOM);
+                childBox.x1 = x1 - borderWidth;
+                childBox.x2 = x2 + borderWidth;
+                childBox.y1 = y1 - borderWidth;
+                childBox.y2 = y2 + borderWidth;
+                thumbnail.frame.set_scale((1 - thumbnail.slidePosition), (1 - thumbnail.slidePosition));
+                thumbnail.frame.allocate(childBox, flags);
 
-            let thumbnailx = Math.round(x + (thumbnailWidth * thumbnail.slidePosition / 2));
-            childBox.x1 = Math.max(thumbnailx, thumbnailx + Math.round(thumbnailWidth/2) - Math.round(thumbnail.title.width/2));
-            childBox.x2 = Math.min(thumbnailx + thumbnailWidth, childBox.x1 + thumbnail.title.width);
-            childBox.y1 = y + thumbnailHeight + thTitleMargin;
-            childBox.y2 = childBox.y1 + thumbnail.title.height;
-            thumbnail.title.allocate(childBox, flags);
+                let thumbnailx = Math.round(x + (thumbnailWidth * thumbnail.slidePosition / 2));
+                childBox.x1 = Math.max(thumbnailx, thumbnailx + Math.round(thumbnailWidth/2) - Math.round(thumbnail.title.width/2));
+                childBox.x2 = Math.min(thumbnailx + thumbnailWidth, childBox.x1 + thumbnail.title.width);
+                childBox.y1 = y + thumbnailHeight + thTitleMargin;
+                childBox.y2 = childBox.y1 + thumbnail.title.height;
+                thumbnail.title.allocate(childBox, flags);
 
-            x += thumbnailWidth + spacing;
-            y += (i + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
+                x += thumbnailWidth + spacing;
+                y += (i + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
+                ++count;
+            } else {
+                let childBox = new Clutter.ActorBox();
+                [thumbnail.actor, thumbnail.frame, thumbnail.title].forEach(function(actor) {
+                    childBox.x1 = childBox.x2 = actor.x;
+                    childBox.y1 = childBox.y2 = actor.y;
+                    actor.allocate(childBox, flags);
+                });
+            }
         }
         let x = 0;
         let y = 0;
