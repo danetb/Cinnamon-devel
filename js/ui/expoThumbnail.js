@@ -1147,14 +1147,14 @@ ExpoThumbnailsBox.prototype = {
         let allocId = Connector.makeConnection(this, 'allocated', Lang.bind(this, function() {
             allocId.disconnect();
             Mainloop.timeout_add(0, Lang.bind(this, function() {
-                this.emit('set-overview-mode', forceOverviewMode === 1);
+                this.emit('set-overview-mode', forceOverviewMode);
                 this.thumbnails[this.kbThumbnailIndex].showKeyboardSelectedState(true);
             }));
         }));
 
         this.toggleGlobalOverviewMode = function() {
-            forceOverviewMode = (forceOverviewMode + 1) % 2;
-            this.emit('set-overview-mode', forceOverviewMode === 1);
+            forceOverviewMode = !forceOverviewMode;
+            this.emit('set-overview-mode', forceOverviewMode);
         };
         this.actor.connect('button-release-event', Lang.bind(this, function(actor, event) {
             if (Cinnamon.get_event_state(event) & Clutter.ModifierType.BUTTON2_MASK) {
