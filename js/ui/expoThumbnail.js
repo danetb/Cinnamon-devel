@@ -1218,11 +1218,12 @@ ExpoThumbnailsBox.prototype = {
         global.stage.set_key_focus(this.actor);
     },
 
-    handleKeyPressReleaseEvent: function(actor, event, released) {
+    handleKeyPressReleaseEvent: function(actor, event, pressed) {
         let modifiers = Cinnamon.get_event_state(event);
         let ctrlAltMask = Clutter.ModifierType.CONTROL_MASK | Clutter.ModifierType.MOD1_MASK;
+        let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
         let symbol = event.get_key_symbol();
-        if (!released) {
+        if (pressed) {
             if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
                 || symbol === Clutter.KP_Enter)
             {
@@ -1238,7 +1239,7 @@ ExpoThumbnailsBox.prototype = {
             }
             return this.selectNextWorkspace(symbol);
         }
-        else if (released) {
+        else if (!pressed) { // released
             if ((symbol === Clutter.o || symbol === Clutter.O)) {
                 this.toggleGlobalOverviewMode();
                 return true;
