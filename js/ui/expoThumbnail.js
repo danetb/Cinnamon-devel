@@ -1190,7 +1190,7 @@ ExpoThumbnailsBox.prototype = {
             let count = this.getVisibleThumbnailCount();
             switch (action) {
                 case "more-zoom":
-                    this._visibleThumbnailCount = Math.ceil(count/2);
+                    this._visibleThumbnailCount = Math.max(1, Math.floor(count/2));
                     break;
                 case "less-zoom":
                     this._visibleThumbnailCount = count*2 >= this.thumbnails.length ? null : count*2;
