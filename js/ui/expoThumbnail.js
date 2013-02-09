@@ -1165,19 +1165,52 @@ ExpoThumbnailsBox.prototype = {
     },
 
     toggleGridMode: function() {
-        let [cols, rows] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
+        let [cols, rows] = this.getNumberOfColumnsAndRows();
         setViewAsGrid(!getViewAsGrid());
-        let [cols2, rows2] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
-        if (cols != cols2 && !this.zoomMode) {
+        let [cols2, rows2] = this.getNumberOfColumnsAndRows();
+        if (cols != cols2) {
             // force a reallocation, if necessary
             this.actor.hide();
             this.actor.show();
         }
     },
 
-    toggleZoomMode: function() {
-        this.zoomMode = !this.zoomMode;
-        if (this.thumbnails.length > 1) {
+    adjustZoom: function(action) {
+        let [cols, rows] = this.getNumberOfColumnsAndRows();
+        let count = this.getVisibleThumbnailCount();
+        switch (action) {
+            case "more-zoom":
+                this._visibleThumbnailCount = Math.ceil(count/2);
+                break;
+            case "less-zoom":
+                this._visibleThumbnailCount = count*2 >= this.thumbnails.length ? null : count*2;
+                break;
+            case "reset-zoom":
+                this._visibleThumbnailCount = null;
+                break;
+        }
+        let [cols2, rows2] = this.getNumberOfColumnsAndRows();
+        if (cols != cols2 || rows != rows2) {
+            // force a reallocation, if necessary
+            this.actor.hide();
+            this.actor.show();
+        }
+    },
+
+    getVisibleThumbnailCount: function() {
+        return this._visibleThumbnailCount || this.thumbnails.length;
+    },
+
+    toggleZoom: function() {
+        let oldCount = this.getVisibleThumbnailCount();
+        if (this._visibleThumbnailCount) {
+            this._visibleThumbnailCount = null;
+        }
+        else {
+            this._visibleThumbnailCount = 1;
+        }
+        let newCount = this.getVisibleThumbnailCount();
+        if (oldCount != newCount) {
             // force a reallocation, if necessary
             this.actor.hide();
             this.actor.show();
@@ -1249,7 +1282,19 @@ ExpoThumbnailsBox.prototype = {
                 return true;
             }
             if ((symbol === Clutter.z || symbol === Clutter.Z)) {
-                this.toggleZoomMode();
+                this.toggleZoom();
+                return true;
+            }
+            if ((symbol === Clutter.plus && ctrlDown)) {
+                this.adjustZoom('more-zoom');
+                return true;
+            }
+            if ((symbol === Clutter.minus && ctrlDown)) {
+                this.adjustZoom('less-zoom');
+                return true;
+            }
+            if ((symbol === 48 && ctrlDown)) {
+                this.adjustZoom('reset-zoom');
                 return true;
             }
         }
@@ -1273,7 +1318,7 @@ ExpoThumbnailsBox.prototype = {
         let prevIndex = this.kbThumbnailIndex;
         let lastIndex = this.thumbnails.length - 1;
         
-        let [nColumns, nRows] = this.getNumberOfColumnsAndRows(this.thumbnails.length);
+        let [nColumns, nRows] = this.getNumberOfColumnsAndRows();
         let nextIndex = GridNavigator.nextIndex(this.thumbnails.length, nColumns, prevIndex, symbol);
         if (nextIndex >= 0) {
             this.kbThumbnailIndex = nextIndex;
@@ -1557,7 +1602,8 @@ ExpoThumbnailsBox.prototype = {
         this.stateUpdateQueued = true;
     },
 
-    getNumberOfColumnsAndRows: function(nWorkspaces) {
+    getNumberOfColumnsAndRows: function(nWorkspacesIn) {
+        let nWorkspaces = nWorkspacesIn || this.getVisibleThumbnailCount();
         let asGrid  = getViewAsGrid();
         let nColumns = asGrid ? Math.ceil(Math.sqrt(nWorkspaces)) : nWorkspaces;
         let nRows = Math.ceil(nWorkspaces/nColumns);
@@ -1592,7 +1638,7 @@ ExpoThumbnailsBox.prototype = {
             return;
 
         let spacing = this.actor.get_theme_node().get_length('spacing');
-        let nWorkspaces = global.screen.n_workspaces;
+        let nWorkspaces = this.getVisibleThumbnailCount();
         let totalSpacing = (nWorkspaces - 1) * spacing;
 
         let avail = Main.layoutManager.primaryMonitor.width - totalSpacing;
@@ -1617,7 +1663,7 @@ ExpoThumbnailsBox.prototype = {
         // to the actual number of current workspaces, we just animate within that
 
         let spacing = this.actor.get_theme_node().get_length('spacing');
-        let nWorkspaces = global.screen.n_workspaces;
+        let nWorkspaces = this.getVisibleThumbnailCount();
         let totalSpacing = (nWorkspaces - 1) * spacing;
 
         let avail = Main.layoutManager.primaryMonitor.width - totalSpacing;
@@ -1650,10 +1696,11 @@ ExpoThumbnailsBox.prototype = {
         let thTitleBottomPadding = firstThumbnailTitleThemeNode.get_padding(St.Side.BOTTOM);
         let thTitleMargin = thTitleBottomPadding;
         let thTitleBorderHeight = firstThumbnailTitleThemeNode.get_border_width(St.Side.BOTTOM) * 2;
-        let extraHeight = thTitleHeight + thTitleTopPadding + thTitleBottomPadding + thTitleMargin + thTitleBorderHeight;
+        let titleFullHeight = thTitleHeight + thTitleTopPadding + thTitleBottomPadding + thTitleBorderHeight;
+        let extraHeight = titleFullHeight + thTitleMargin;
         
         // Compute the scale we'll need once everything is updated
-        let nWorkspaces = this.zoomMode ? 1 : this.thumbnails.length;
+        let nWorkspaces = this.getVisibleThumbnailCount();
         let [nColumns, nRows] = this.getNumberOfColumnsAndRows(nWorkspaces);
         let totalSpacingX = (nColumns - 1) * spacing;
         let availX = (box.x2 - box.x1) - totalSpacingX - (spacing * 2) ;
@@ -1699,12 +1746,31 @@ ExpoThumbnailsBox.prototype = {
 
         this.background.allocate(childBox, flags);
 
+        let isVisibleIndex = Lang.bind(this, function(index) {
+            if (index == this.kbThumbnailIndex) {
+                return true;
+            }
+            if (!this._visibleThumbnailCount) {
+                return true;
+            }
+            let vcount = this.getVisibleThumbnailCount();
+            if (this.kbThumbnailIndex == 0) {
+                return index < vcount;
+            }
+            if (this.kbThumbnailIndex == this.thumbnails.length - 1) {
+                return index >= this.thumbnails.length - vcount;
+            }
+            let leftVisibleIndex = Math.max(0, this.kbThumbnailIndex - Math.floor(vcount/2));
+            let rightVisibleIndex = Math.min(this.thumbnails.length, leftVisibleIndex + vcount);
+            return index >= leftVisibleIndex && index < rightVisibleIndex;
+        });
+
         let x;
         let y = spacing + Math.floor((availY - nRows * thumbnailHeight) / 2);
         let count = 0;
         for (let i = 0; i < this.thumbnails.length; i++) {
             let thumbnail = this.thumbnails[i];
-            if (!this.zoomMode || i == this.kbThumbnailIndex) {
+            if (isVisibleIndex(i)) {
                 let column = count % nColumns;
                 let row = Math.floor(count / nColumns);
                 let cItemsInRow = Math.min(nWorkspaces - (row * nColumns), nColumns);
@@ -1744,19 +1810,25 @@ ExpoThumbnailsBox.prototype = {
                 childBox.x1 = Math.max(thumbnailx, thumbnailx + Math.round(thumbnailWidth/2) - Math.round(thumbnail.title.width/2));
                 childBox.x2 = Math.min(thumbnailx + thumbnailWidth, childBox.x1 + thumbnail.title.width);
                 childBox.y1 = y + thumbnailHeight + thTitleMargin;
-                childBox.y2 = childBox.y1 + thumbnail.title.height;
+                childBox.y2 = childBox.y1 + titleFullHeight;
                 thumbnail.title.allocate(childBox, flags);
 
                 x += thumbnailWidth + spacing;
-                y += (i + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
+                y += (count + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
                 ++count;
             } else {
                 let childBox = new Clutter.ActorBox();
-                [thumbnail.actor, thumbnail.frame, thumbnail.title].forEach(function(actor) {
-                    childBox.x1 = childBox.x2 = actor.x;
-                    childBox.y1 = childBox.y2 = actor.y;
+                [thumbnail.actor, thumbnail.frame].forEach(function(actor) {
+                    childBox.x1 = childBox.x2 = 0;
+                    childBox.y1 = childBox.y2 = 0;
                     actor.allocate(childBox, flags);
                 });
+                // Since the allocation of a visible thumbnail's title depends on the title already having
+                // its width set, we must not change that when hiding the thumbnail.
+                childBox.x1 = 0;
+                childBox.x2 = thumbnail.title.width;
+                childBox.y1 = childBox.y2 = 0;
+                thumbnail.title.allocate(childBox, flags);
             }
         }
         let x = 0;
