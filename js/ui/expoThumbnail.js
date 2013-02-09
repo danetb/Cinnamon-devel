@@ -749,6 +749,9 @@ ExpoWorkspaceThumbnail.prototype = {
         clone.connect('drag-begin', Lang.bind(this, function(clone) {
             this.box.emit('drag-begin');
             this.resetCloneHover();
+            Mainloop.idle_add(Lang.bind(this, function() {
+                this.box.killZoom();
+            }));
         }));
         clone.connect('drag-end', Lang.bind(this, function(clone) {
             this.box.emit('drag-end');
@@ -1165,30 +1168,14 @@ ExpoThumbnailsBox.prototype = {
     },
 
     toggleGridMode: function() {
-        let [cols, rows] = this.getNumberOfColumnsAndRows();
-        setViewAsGrid(!getViewAsGrid());
-        let [cols2, rows2] = this.getNumberOfColumnsAndRows();
-        if (cols != cols2) {
-            // force a reallocation, if necessary
-            this.actor.hide();
-            this.actor.show();
-        }
+        this.reallocWrapper(this, function() {
+            setViewAsGrid(!getViewAsGrid());
+        });
     },
 
-    adjustZoom: function(action) {
+    reallocWrapper: function(scope, func) {
         let [cols, rows] = this.getNumberOfColumnsAndRows();
-        let count = this.getVisibleThumbnailCount();
-        switch (action) {
-            case "more-zoom":
-                this._visibleThumbnailCount = Math.ceil(count/2);
-                break;
-            case "less-zoom":
-                this._visibleThumbnailCount = count*2 >= this.thumbnails.length ? null : count*2;
-                break;
-            case "reset-zoom":
-                this._visibleThumbnailCount = null;
-                break;
-        }
+        (Lang.bind(scope, func))();
         let [cols2, rows2] = this.getNumberOfColumnsAndRows();
         if (cols != cols2 || rows != rows2) {
             // force a reallocation, if necessary
@@ -1197,24 +1184,42 @@ ExpoThumbnailsBox.prototype = {
         }
     },
 
+    adjustZoom: function(action) {
+        this.reallocWrapper(this, function() {
+            let count = this.getVisibleThumbnailCount();
+            switch (action) {
+                case "more-zoom":
+                    this._visibleThumbnailCount = Math.ceil(count/2);
+                    break;
+                case "less-zoom":
+                    this._visibleThumbnailCount = count*2 >= this.thumbnails.length ? null : count*2;
+                    break;
+                case "reset-zoom":
+                    this._visibleThumbnailCount = null;
+                    break;
+            }
+        });
+    },
+
     getVisibleThumbnailCount: function() {
         return this._visibleThumbnailCount || this.thumbnails.length;
     },
 
     toggleZoom: function() {
-        let oldCount = this.getVisibleThumbnailCount();
-        if (this._visibleThumbnailCount) {
+        this.reallocWrapper(this, function() {
+            if (this._visibleThumbnailCount) {
+                this._visibleThumbnailCount = null;
+            }
+            else {
+                this._visibleThumbnailCount = 1;
+            }
+        });
+    },
+
+    killZoom: function() {
+        this.reallocWrapper(this, function() {
             this._visibleThumbnailCount = null;
-        }
-        else {
-            this._visibleThumbnailCount = 1;
-        }
-        let newCount = this.getVisibleThumbnailCount();
-        if (oldCount != newCount) {
-            // force a reallocation, if necessary
-            this.actor.hide();
-            this.actor.show();
-        }
+        });
     },
 
     show: function() {
