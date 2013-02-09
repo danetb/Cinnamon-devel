@@ -1176,6 +1176,7 @@ ExpoThumbnailsBox.prototype = {
     reallocWrapper: function(scope, func) {
         let [cols, rows] = this.getNumberOfColumnsAndRows();
         (Lang.bind(scope, func))();
+        this.decideThumbnailVisibility();
         let [cols2, rows2] = this.getNumberOfColumnsAndRows();
         if (cols != cols2 || rows != rows2) {
             // force a reallocation, if necessary
@@ -1243,6 +1244,7 @@ ExpoThumbnailsBox.prototype = {
                     }
                 }
             }, this);
+            this.decideThumbnailVisibility();
             this.updateStates();
         }));
 
@@ -1318,6 +1320,29 @@ ExpoThumbnailsBox.prototype = {
         this.thumbnails[this.kbThumbnailIndex].remove();
     },
 
+    decideThumbnailVisibility: function(direction) {
+        if (direction) {
+            let leftMargin = this.kbThumbnailIndex - this.leftIndex;
+            let rightMargin = this.rightIndex - this.kbThumbnailIndex;
+            if (leftMargin < 0) {
+                this.leftIndex -= -leftMargin;
+                this.rightIndex -= -leftMargin;
+            }
+            if (rightMargin < 0) {
+                this.leftIndex += -rightMargin;
+                this.rightIndex += -rightMargin;
+            }
+        }
+        if (!direction) {
+            let vcount = this.getVisibleThumbnailCount();
+            let leftIndex = this.kbThumbnailIndex - vcount + 1;
+            let diff = leftIndex < 0 ? -leftIndex : 0;
+            this.leftIndex = Math.max(0, leftIndex);
+            this.rightIndex = this.kbThumbnailIndex + diff;
+            return;
+        }
+    },
+
     // returns true if symbol was understood, false otherwise
     selectNextWorkspace: function(symbol) {
         let prevIndex = this.kbThumbnailIndex;
@@ -1348,6 +1373,7 @@ ExpoThumbnailsBox.prototype = {
         }
 
         if (prevIndex != this.kbThumbnailIndex) {
+            this.decideThumbnailVisibility(this.kbThumbnailIndex - prevIndex);
             this.thumbnails[prevIndex].showKeyboardSelectedState(false);
             this.thumbnails[this.kbThumbnailIndex].showKeyboardSelectedState(true);
         }
@@ -1381,6 +1407,7 @@ ExpoThumbnailsBox.prototype = {
             let thumbnail = new ExpoWorkspaceThumbnail(metaWorkspace, this);
                                   
             this.thumbnails.push(thumbnail);
+            this.decideThumbnailVisibility();
             if (metaWorkspace == global.screen.get_active_workspace()) {
                 this.lastActiveWorkspace = thumbnail;
                 thumbnail.setActive(true);
@@ -1752,22 +1779,7 @@ ExpoThumbnailsBox.prototype = {
         this.background.allocate(childBox, flags);
 
         let isVisibleIndex = Lang.bind(this, function(index) {
-            if (index == this.kbThumbnailIndex) {
-                return true;
-            }
-            if (!this._visibleThumbnailCount) {
-                return true;
-            }
-            let vcount = this.getVisibleThumbnailCount();
-            if (this.kbThumbnailIndex == 0) {
-                return index < vcount;
-            }
-            if (this.kbThumbnailIndex == this.thumbnails.length - 1) {
-                return index >= this.thumbnails.length - vcount;
-            }
-            let leftVisibleIndex = Math.max(0, this.kbThumbnailIndex - Math.floor(vcount/2));
-            let rightVisibleIndex = Math.min(this.thumbnails.length, leftVisibleIndex + vcount);
-            return index >= leftVisibleIndex && index < rightVisibleIndex;
+            return index >= this.leftIndex && index <= this.rightIndex;
         });
 
         let x;
