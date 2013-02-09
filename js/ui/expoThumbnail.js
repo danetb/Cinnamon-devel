@@ -1264,6 +1264,14 @@ ExpoThumbnailsBox.prototype = {
         let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
         let symbol = event.get_key_symbol();
         if (pressed) {
+            if ((symbol === Clutter.plus && ctrlDown)) {
+                this.adjustZoom('more-zoom');
+                return true;
+            }
+            if ((symbol === Clutter.minus && ctrlDown)) {
+                this.adjustZoom('less-zoom');
+                return true;
+            }
         }
         else if (!pressed) { // released
             if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
@@ -1286,14 +1294,6 @@ ExpoThumbnailsBox.prototype = {
             }
             if ((symbol === Clutter.z || symbol === Clutter.Z)) {
                 this.toggleZoom();
-                return true;
-            }
-            if ((symbol === Clutter.plus && ctrlDown)) {
-                this.adjustZoom('more-zoom');
-                return true;
-            }
-            if ((symbol === Clutter.minus && ctrlDown)) {
-                this.adjustZoom('less-zoom');
                 return true;
             }
             if ((symbol === 48 && ctrlDown)) {
