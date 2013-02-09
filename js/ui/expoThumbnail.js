@@ -1257,6 +1257,8 @@ ExpoThumbnailsBox.prototype = {
         let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
         let symbol = event.get_key_symbol();
         if (pressed) {
+        }
+        else if (!pressed) { // released
             if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
                 || symbol === Clutter.KP_Enter)
             {
@@ -1267,12 +1269,6 @@ ExpoThumbnailsBox.prototype = {
                 this.editWorkspaceTitle();
                 return true;
             }
-            if (modifiers & ctrlAltMask) {
-                return false;
-            }
-            return this.selectNextWorkspace(symbol);
-        }
-        else if (!pressed) { // released
             if ((symbol === Clutter.o || symbol === Clutter.O)) {
                 this.toggleGlobalOverviewMode();
                 return true;
@@ -1297,6 +1293,10 @@ ExpoThumbnailsBox.prototype = {
                 this.adjustZoom('reset-zoom');
                 return true;
             }
+            if (modifiers & ctrlAltMask) {
+                return false;
+            }
+            return this.selectNextWorkspace(symbol);
         }
         return false;
     },
