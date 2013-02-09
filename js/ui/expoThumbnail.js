@@ -1152,15 +1152,16 @@ ExpoThumbnailsBox.prototype = {
             }));
         }));
 
-        this.toggleGlobalOverviewMode = function() {
-            forceOverviewMode = !forceOverviewMode;
-            this.emit('set-overview-mode', forceOverviewMode);
-        };
         this.actor.connect('button-release-event', Lang.bind(this, function(actor, event) {
             if (Cinnamon.get_event_state(event) & Clutter.ModifierType.BUTTON2_MASK) {
                 this.toggleGlobalOverviewMode();
             }
         }));
+    },
+
+    toggleGlobalOverviewMode: function() {
+        forceOverviewMode = !forceOverviewMode;
+        this.emit('set-overview-mode', forceOverviewMode);
     },
 
     toggleGridMode: function() {
