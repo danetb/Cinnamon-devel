@@ -918,13 +918,25 @@ ExpoWorkspaceThumbnail.prototype = {
     },
 
     onScrollEvent: function (actor, event) {
+        let modifiers = Cinnamon.get_event_state(event);
+        let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
         switch ( event.get_scroll_direction() ) {
-        case Clutter.ScrollDirection.UP:
-            Main.wm.actionMoveWorkspaceLeft();
-            break;
-        case Clutter.ScrollDirection.DOWN:
-            Main.wm.actionMoveWorkspaceRight();
-            break;
+            case Clutter.ScrollDirection.UP:
+                if (!ctrlDown) {
+                    Main.wm.actionMoveWorkspaceLeft();
+                }
+                else {
+                    this.box.adjustZoom('more-zoom', this);
+                }
+                break;
+            case Clutter.ScrollDirection.DOWN:
+                if (!ctrlDown) {
+                    Main.wm.actionMoveWorkspaceRight();
+                }
+                else {
+                    this.box.adjustZoom('less-zoom', this);
+                }
+                break;
         }
     },
 
@@ -1121,8 +1133,9 @@ ExpoThumbnailsBox.prototype = {
         this.button.connect('leave-event', Lang.bind(this, function () {this.button.hide();}));
         this.button.connect('clicked', Lang.bind(this, function () { this.lastHovered.remove(); this.button.hide();}));
         this.button.hide();
-                
-        this.actor.connect('scroll-event', this.onScrollEvent);
+
+        // for some strange reason, this event handler does not get called ...
+        this.actor.connect('scroll-event', Lang.bind(this, this.onScrollEvent));
 
         this.targetScale = 0;
         this._scale = 0;
@@ -1185,7 +1198,16 @@ ExpoThumbnailsBox.prototype = {
         }
     },
 
-    adjustZoom: function(action) {
+    adjustZoom: function(action, thumbnail) {
+        if (thumbnail) {
+            this.thumbnails.some(function(th, index) {
+                if (thumbnail == th) {
+                    this.changeSelectedThumbnailIndex(index);
+                    return true;
+                }
+                return false;
+            }, this);
+        }
         this.reallocWrapper(this, function() {
             let count = this.getVisibleThumbnailCount();
             switch (action) {
@@ -1349,11 +1371,8 @@ ExpoThumbnailsBox.prototype = {
         let lastIndex = this.thumbnails.length - 1;
         
         let [nColumns, nRows] = this.getNumberOfColumnsAndRows();
-        let nextIndex = GridNavigator.nextIndex(this.thumbnails.length, nColumns, prevIndex, symbol);
-        if (nextIndex >= 0) {
-            this.kbThumbnailIndex = nextIndex;
-        }
-        else {
+        let newIndex = GridNavigator.nextIndex(this.thumbnails.length, nColumns, prevIndex, symbol);
+        if (newIndex < 0) {
             let index = symbol - 48 - 1; // convert '1' to index 0, etc
             if (index >= 0 && index < 10) {
                 // OK
@@ -1372,12 +1391,18 @@ ExpoThumbnailsBox.prototype = {
             return true; // handled
         }
 
-        if (prevIndex != this.kbThumbnailIndex) {
-            this.decideThumbnailVisibility(this.kbThumbnailIndex - prevIndex);
-            this.thumbnails[prevIndex].showKeyboardSelectedState(false);
-            this.thumbnails[this.kbThumbnailIndex].showKeyboardSelectedState(true);
+        if (prevIndex != newIndex) {
+            this.changeSelectedThumbnailIndex(newIndex);
         }
         return true; // handled
+    },
+
+    changeSelectedThumbnailIndex: function(newIndex) {
+        let prevIndex = this.kbThumbnailIndex;
+        this.kbThumbnailIndex = newIndex;
+        this.decideThumbnailVisibility(this.kbThumbnailIndex - prevIndex);
+        this.thumbnails[prevIndex].showKeyboardSelectedState(false);
+        this.thumbnails[this.kbThumbnailIndex].showKeyboardSelectedState(true);
     },
 
     hide: function() {
