@@ -1890,6 +1890,7 @@ ExpoThumbnailsBox.prototype = {
         }
         thumbnail.setActive(true);
         this.lastActiveWorkspace = thumbnail;
+        this.decideThumbnailVisibility(direction);
     },
 
     onScrollEvent: function (actor, event) {
