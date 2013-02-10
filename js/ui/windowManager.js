@@ -179,7 +179,7 @@ WindowManager.prototype = {
 
         let wsIndex = window.get_workspace().index();
         let wsText = (wsIndex != global.screen.get_active_workspace_index()) ?
-            _(" on workspace " + Main.getWorkspaceName(wsIndex)) :
+            _(" on workspace %s").format(Main.getWorkspaceName(wsIndex)) :
             "";
         let reason = urgent ?
             _("Window marked urgent") :
