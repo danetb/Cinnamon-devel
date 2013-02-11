@@ -920,23 +920,58 @@ ExpoWorkspaceThumbnail.prototype = {
     onScrollEvent: function (actor, event) {
         let modifiers = Cinnamon.get_event_state(event);
         let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
-        switch ( event.get_scroll_direction() ) {
-            case Clutter.ScrollDirection.UP:
-                if (!ctrlDown) {
+        if (!ctrlDown) {
+            switch ( event.get_scroll_direction() ) {
+                case Clutter.ScrollDirection.UP:
                     Main.wm.actionMoveWorkspaceLeft();
-                }
-                else {
-                    this.box.adjustZoom('more-zoom', this);
-                }
-                break;
-            case Clutter.ScrollDirection.DOWN:
-                if (!ctrlDown) {
+                    break;
+                case Clutter.ScrollDirection.DOWN:
                     Main.wm.actionMoveWorkspaceRight();
+                    break;
+            }
+        }
+        else {
+            // We want zoom scroll to be smooth, so we try and squash many quick scroll events into a
+            // single action, if possible.
+            if (this.scrollTimeoutId) {
+                Mainloop.source_remove(this.scrollTimeoutId);
+
+                // Preserve the initial direction
+                if (this.zoomScrollAmount < 0) {
+                    this.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 0 : -1;
                 }
                 else {
-                    this.box.adjustZoom('less-zoom', this);
+                    this.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : 0;
                 }
-                break;
+            }
+            else {
+                this.zoomScrollAmount = (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : -1;
+                // if we are squashing many events, the selected thumbnail should be the one
+                // that was the target of the first event.
+                this.zoomThumbnailIndex = -1;
+                this.box.thumbnails.some(function(th, index) {
+                    if (th == this) {
+                        this.zoomThumbnailIndex = index;
+                        return true;
+                    }
+                    return false;
+                }, this);
+            }
+            this.scrollTimeoutId = Mainloop.timeout_add(100, Lang.bind(this, function() {
+                this.scrollTimeoutId = null;
+                if (this.zoomScrollAmount == 0) {
+                    return;
+                }
+                if (this.zoomThumbnailIndex >= 0) {
+                    this.box.changeSelectedThumbnailIndex(this.zoomThumbnailIndex);
+                }
+                if (this.zoomScrollAmount > 0) {
+                    this.box.adjustZoom('more-zoom', Math.abs(this.zoomScrollAmount));
+                }
+                if (this.zoomScrollAmount < 0) {
+                    this.box.adjustZoom('less-zoom', Math.abs(this.zoomScrollAmount));
+                }
+            }));
         }
     },
 
@@ -1198,29 +1233,23 @@ ExpoThumbnailsBox.prototype = {
         }
     },
 
-    adjustZoom: function(action, thumbnail) {
-        if (thumbnail) {
-            this.thumbnails.some(function(th, index) {
-                if (thumbnail == th) {
-                    this.changeSelectedThumbnailIndex(index);
-                    return true;
-                }
-                return false;
-            }, this);
-        }
+    adjustZoom: function(action, iterationsOpt) {
+        let iterations = iterationsOpt || 1;
         this.reallocWrapper(this, function() {
-            let count = this.getVisibleThumbnailCount();
-            switch (action) {
-                case "more-zoom":
-                    this._visibleThumbnailCount = Math.max(1, Math.floor(count/2));
-                    break;
-                case "less-zoom":
-                    let newCount = Math.max(2, count*count);
-                    this._visibleThumbnailCount = newCount >= this.thumbnails.length ? null : newCount;
-                    break;
-                case "reset-zoom":
-                    this._visibleThumbnailCount = null;
-                    break;
+            for (i = 0; i < iterations; ++i) {
+                let count = this.getVisibleThumbnailCount();
+                switch (action) {
+                    case "more-zoom":
+                        this._visibleThumbnailCount = Math.max(1, Math.floor(count/2));
+                        break;
+                    case "less-zoom":
+                        let newCount = Math.max(2, count*count);
+                        this._visibleThumbnailCount = newCount >= this.thumbnails.length ? null : newCount;
+                        break;
+                    case "reset-zoom":
+                        this._visibleThumbnailCount = null;
+                        break;
+                }
             }
         });
     },
