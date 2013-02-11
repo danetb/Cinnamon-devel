@@ -1296,7 +1296,6 @@ ExpoThumbnailsBox.prototype = {
                     }
                 }
             }, this);
-            this.decideThumbnailVisibility();
             this.updateStates();
         }));
 
@@ -1632,6 +1631,7 @@ ExpoThumbnailsBox.prototype = {
                                                index === this.thumbnails.length))
                                        {
                                            --this.kbThumbnailIndex;
+                                            this.decideThumbnailVisibility();
                                        }
 
                                        this.queueUpdateStates();
