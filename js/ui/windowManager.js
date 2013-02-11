@@ -224,7 +224,6 @@ WindowManager.prototype = {
 
         const TIMEOUT = 3000;
         const ATTENTION_LIMIT = 10000;
-        let then = new Date();
         let timeoutId = null;
         let timerFunction = function() {
             timeoutId = null;
@@ -232,12 +231,6 @@ WindowManager.prototype = {
             if (!is_alerting || display.focus_window == window) {
                 cleanup(true);
                 return;
-            }
-            if (window.is_demanding_attention()) {
-                if ((new Date()).getTime() - then.getTime() > ATTENTION_LIMIT) {
-                    Main.activateWindow(window);
-                    return;
-                }
             }
             timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
         };
