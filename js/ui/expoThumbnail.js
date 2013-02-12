@@ -834,6 +834,7 @@ ExpoWorkspaceThumbnail.prototype = {
         }, this);
 
         windows.reverse(); // top-to-bottom order
+        let singleMonitor = Main.layoutManager.monitors.length == 1;
         Main.layoutManager.monitors.forEach(function(monitor, monitorIndex) {
             let monitorWindows = windows.filter(function(window) {
                 return window.metaWindow.get_monitor() === monitorIndex;
@@ -842,8 +843,8 @@ ExpoWorkspaceThumbnail.prototype = {
             let spacing = 14;
             let nWindows = monitorWindows.length;
             let [nCols, nRows]  = [Math.ceil(Math.sqrt(nWindows)), Math.round(Math.sqrt(nWindows))]
-            let maxWindowWidth = (monitor.width - (spacing * (nCols+1))) / nCols;
-            let maxWindowHeight = (monitor.height - (spacing * (nRows+1))) / nRows;
+            let maxWindowWidth = ((singleMonitor ? (this.box._boxWidth / this.box.scale) : monitor.width) - (spacing * (nCols+1))) / nCols;
+            let maxWindowHeight = ((singleMonitor ? (this.box._boxHeight / this.box.scale) : monitor.height) - (spacing * (nRows+1))) / nRows;
             let [col, row] = [1, 1];
             let lastRowCols = nWindows - ((nRows - 1) * nCols);
             let lastRowOffset = (monitor.width - (maxWindowWidth * lastRowCols) - (spacing * (lastRowCols+1))) / 2;
@@ -1803,9 +1804,9 @@ ExpoThumbnailsBox.prototype = {
                 // Allocating a scaled actor is funny - x1/y1 correspond to the origin
                 // of the actor, but x2/y2 are increased by the *unscaled* size.
                 childBox.x1 = x1;
-                childBox.x2 = x1 + portholeWidth;
+                childBox.x2 = x1 + thumbnailWidth / newScale;
                 childBox.y1 = y1;
-                childBox.y2 = y1 + portholeHeight;
+                childBox.y2 = y1 + thumbnailHeight / newScale;
 
                 let scale = this._scale * (1 - thumbnail.slidePosition);
                 thumbnail.actor.set_scale(scale, scale);
