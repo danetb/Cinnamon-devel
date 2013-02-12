@@ -445,14 +445,12 @@ ExpoWorkspaceThumbnail.prototype = {
         let desktopBackground = Meta.BackgroundActor.new_for_screen(global.screen);
         this.background.add_actor(desktopBackground);
 
-        let backgroundShade = new St.Bin({style_class: 'workspace-overview-background-shade'});
+        let backgroundShade = this.backgroundShade = new St.Bin({style_class: 'workspace-overview-background-shade'});
         this.background.add_actor(backgroundShade);
-        backgroundShade.set_size(global.screen_width, global.screen_height);
 
         this.shader = new St.Bin();
         this.shader.set_style('background-color: black;');
         this.actor.add_actor(this.shader);
-        this.shader.set_size(global.screen_width, global.screen_height);
 
         this.shader.opacity = INACTIVE_OPACITY;
 
@@ -494,6 +492,14 @@ ExpoWorkspaceThumbnail.prototype = {
         this.restack();
         this._slidePosition = 0; // Fully slid in
         this.setOverviewMode(forceOverviewMode);
+    },
+
+    setSizes: function(width, height) {
+        this.backgroundShade.set_size(width, height);
+        this.shader.set_size(width, height);
+        this.offsetX = Math.round((width - global.screen_width) / 2);
+        this.offsetY = Math.round((height - global.screen_height) / 2);
+        this.background.set_position(this.offsetX, this.offsetY);
     },
 
     setOverviewMode: function(turnOn) {
@@ -909,8 +915,8 @@ ExpoWorkspaceThumbnail.prototype = {
                 window.icon.hide();
                 window.actor.show();
                 Tweener.addTween(window.actor, {
-                    x: window.origX,
-                    y: window.origY,
+                    x: window.origX + this.offsetX,
+                    y: window.origY + this.offsetY,
                     scale_x: 1, scale_y: 1,
                     opacity: window.metaWindow.showing_on_its_workspace() ? 255 : 127,
                     time: rearrangeTime, transition: effect
@@ -1736,6 +1742,8 @@ ExpoThumbnailsBox.prototype = {
         let availX = (box.x2 - box.x1) - totalSpacingX - (spacing * 2) ;
         let availY = (box.y2 - box.y1) - 2 * spacing - nRows * extraHeight - (nRows - 1) * thTitleMargin;
         let screen = (box.x2 - box.x1);
+        let boxWidth = box.x2 - box.x1;
+        let boxHeight = box.y2 - box.y1;
 
         let newScaleX = (availX / nColumns) / portholeWidth;
         let newScaleY = (availY / nRows) / portholeHeight;
@@ -1830,6 +1838,9 @@ ExpoThumbnailsBox.prototype = {
 
                 x += thumbnailWidth + spacing;
                 y += (count + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
+                Mainloop.timeout_add(0, function() {
+                    thumbnail.setSizes(thumbnailWidth / newScale, thumbnailHeight / newScale);
+                });
                 ++count;
             } else {
                 let childBox = new Clutter.ActorBox();
