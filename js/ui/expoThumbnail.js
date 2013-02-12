@@ -1807,6 +1807,8 @@ ExpoThumbnailsBox.prototype = {
 
                 let [y1, y2] = [y, y + thumbnailHeight];
 
+                let scale = this._scale * (1 - thumbnail.slidePosition);
+
                 // Allocating a scaled actor is funny - x1/y1 correspond to the origin
                 // of the actor, but x2/y2 are increased by the *unscaled* size.
                 childBox.x1 = x1;
@@ -1814,7 +1816,6 @@ ExpoThumbnailsBox.prototype = {
                 childBox.y1 = y1;
                 childBox.y2 = y1 + thumbnailHeight / newScale;
 
-                let scale = this._scale * (1 - thumbnail.slidePosition);
                 thumbnail.actor.set_scale(scale, scale);
                 thumbnail.actor.allocate(childBox, flags);  
 
@@ -1836,11 +1837,9 @@ ExpoThumbnailsBox.prototype = {
 
                 x += thumbnailWidth + spacing;
                 y += (count + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
-                if (scale) {
-                    Mainloop.timeout_add(0, function() {
-                        thumbnail.setSizes(thumbnailWidth / scale, thumbnailHeight / scale);
-                    });
-                }
+                Mainloop.timeout_add(0, function() {
+                    thumbnail.setSizes(thumbnailWidth / newScale, thumbnailHeight / newScale);
+                });
                 ++count;
             } else {
                 let childBox = new Clutter.ActorBox();
