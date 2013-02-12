@@ -355,7 +355,7 @@ ExpoWorkspaceThumbnail.prototype = {
                                     clip_to_allocation: true,
                                     style_class: 'workspace-thumbnail' });
         this.actor._delegate = this;
-        this.actor.set_size(global.screen_width, global.screen_height);
+        // this.actor.set_size(global.screen_width, global.screen_height);
 
         this.contents = new Clutter.Group();
         this.actor.add_actor(this.contents);
@@ -1754,8 +1754,8 @@ ExpoThumbnailsBox.prototype = {
             this.queueUpdateStates();
         }
 
-        let thumbnailHeight = Math.round(portholeHeight * this._scale);
-        let thumbnailWidth = Math.round(portholeWidth * this._scale);
+        let thumbnailHeight = this._boxHeight = Math.round(availY/nRows);
+        let thumbnailWidth = this._boxWidth = Math.round(availX/nColumns);
 
         let childBox = new Clutter.ActorBox();
         
