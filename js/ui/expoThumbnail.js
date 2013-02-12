@@ -393,8 +393,6 @@ ExpoWorkspaceThumbnail.prototype = {
                 return false;
             }));
 
-        this.actor.connect('scroll-event', Lang.bind(this, this.onScrollEvent));
-        
         this.closeWindowButton = new St.Button({ style_class: 'window-close' });
         this.actor.add_actor(this.closeWindowButton);
         this.closeWindowButton.connect('clicked', Lang.bind(this, function(actor, event) {
@@ -917,64 +915,6 @@ ExpoWorkspaceThumbnail.prototype = {
         }, this);
     },
 
-    onScrollEvent: function (actor, event) {
-        let modifiers = Cinnamon.get_event_state(event);
-        let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
-        if (!ctrlDown) {
-            switch ( event.get_scroll_direction() ) {
-                case Clutter.ScrollDirection.UP:
-                    this.box.selectNextWorkspace(Clutter.Left);
-                    break;
-                case Clutter.ScrollDirection.DOWN:
-                    this.box.selectNextWorkspace(Clutter.Right);
-                    break;
-            }
-        }
-        else {
-            // We want zoom scroll to be smooth, so we try and squash many quick scroll events into a
-            // single action, if possible.
-            if (this.scrollTimeoutId) {
-                Mainloop.source_remove(this.scrollTimeoutId);
-
-                // Preserve the initial direction
-                if (this.zoomScrollAmount < 0) {
-                    this.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 0 : -1;
-                }
-                else {
-                    this.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : 0;
-                }
-            }
-            else {
-                this.zoomScrollAmount = (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : -1;
-                // if we are squashing many events, the selected thumbnail should be the one
-                // that was the target of the first event.
-                this.zoomThumbnailIndex = -1;
-                this.box.thumbnails.some(function(th, index) {
-                    if (th == this) {
-                        this.zoomThumbnailIndex = index;
-                        return true;
-                    }
-                    return false;
-                }, this);
-            }
-            this.scrollTimeoutId = Mainloop.timeout_add(100, Lang.bind(this, function() {
-                this.scrollTimeoutId = null;
-                if (this.zoomScrollAmount == 0) {
-                    return;
-                }
-                if (this.zoomThumbnailIndex >= 0) {
-                    this.box.changeSelectedThumbnailIndex(this.zoomThumbnailIndex);
-                }
-                if (this.zoomScrollAmount > 0) {
-                    this.box.adjustZoom('more-zoom', Math.abs(this.zoomScrollAmount));
-                }
-                if (this.zoomScrollAmount < 0) {
-                    this.box.adjustZoom('less-zoom', Math.abs(this.zoomScrollAmount));
-                }
-            }));
-        }
-    },
-
     activate : function (clone, time) {
         if (this.state > ThumbnailState.NORMAL)
             return;
@@ -1169,7 +1109,6 @@ ExpoThumbnailsBox.prototype = {
         this.button.connect('clicked', Lang.bind(this, function () { this.lastHovered.remove(); this.button.hide();}));
         this.button.hide();
 
-        // for some strange reason, this event handler does not get called ...
         this.actor.connect('scroll-event', Lang.bind(this, this.onScrollEvent));
 
         this.targetScale = 0;
@@ -1531,6 +1470,8 @@ ExpoThumbnailsBox.prototype = {
                     });
                 }
             }));
+
+            thumbnail.actor.connect('scroll-event', Lang.bind(this, this.onScrollEvent, thumbnail));
 
             if (start > 0) { // not the initial fill
                 thumbnail.state = ThumbnailState.NEW;
@@ -1948,15 +1889,61 @@ ExpoThumbnailsBox.prototype = {
         this.decideThumbnailVisibility(direction);
     },
 
-    onScrollEvent: function (actor, event) {
-        switch ( event.get_scroll_direction() ) {
-        case Clutter.ScrollDirection.UP:
-            Main.wm.actionMoveWorkspaceUp();
-            break;
-        case Clutter.ScrollDirection.DOWN:
-            Main.wm.actionMoveWorkspaceDown();
-            break;
+    onScrollEvent: function (actor, event, thumbnail) {
+        // We want scroll (be it zoom- or workspace-selection-scroll) to be smooth, so we try and squash many quick scroll events into a
+        // single action, if possible.
+        let scrollData = this.scrollData;
+        if (!scrollData) {
+            // New event
+            scrollData = this.scrollData = {};
+            let modifiers = Cinnamon.get_event_state(event);
+            scrollData.zoomScrollAmount = (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : -1;
+            scrollData.zoomCtrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
+            scrollData.zoomThumbnailIndex = -1;
+            if (scrollData.zoomCtrlDown && thumbnail) {
+                // if we are squashing many events, if we are going to zoom, the selected thumbnail should be the one
+                // that was the target of the first event.
+                scrollData.zoomThumbnailIndex = thumbnail.metaWorkspace.index();
+            }
         }
+        else {
+            // Subsequent event, in quick succession
+            Mainloop.source_remove(scrollData.scrollTimeoutId);
+
+            // Preserve the initial direction
+            if (scrollData.zoomScrollAmount < 0) {
+                scrollData.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 0 : -1;
+            }
+            else {
+                scrollData.zoomScrollAmount += (event.get_scroll_direction() == Clutter.ScrollDirection.UP) ? 1 : 0;
+            }
+        }
+        scrollData.scrollTimeoutId = Mainloop.timeout_add(100, Lang.bind(this, function() {
+            try {
+                if (scrollData.zoomThumbnailIndex >= 0) {
+                    this.changeSelectedThumbnailIndex(scrollData.zoomThumbnailIndex);
+                }
+                if (scrollData.zoomScrollAmount > 0) {
+                    if (scrollData.zoomCtrlDown) {
+                        this.adjustZoom('more-zoom', Math.abs(scrollData.zoomScrollAmount));
+                    }
+                    else {
+                        this.selectNextWorkspace(Clutter.Left);
+                    }
+                }
+                if (scrollData.zoomScrollAmount < 0) {
+                    if (scrollData.zoomCtrlDown) {
+                        this.adjustZoom('less-zoom', Math.abs(scrollData.zoomScrollAmount));
+                    }
+                    else {
+                        this.selectNextWorkspace(Clutter.Right);
+                    }
+                }
+            }
+            finally {
+                delete this.scrollData;
+            }
+        }));
     }
 };
 Signals.addSignalMethods(ExpoThumbnailsBox.prototype);
