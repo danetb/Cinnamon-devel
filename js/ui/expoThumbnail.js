@@ -923,10 +923,10 @@ ExpoWorkspaceThumbnail.prototype = {
         if (!ctrlDown) {
             switch ( event.get_scroll_direction() ) {
                 case Clutter.ScrollDirection.UP:
-                    Main.wm.actionMoveWorkspaceLeft();
+                    this.box.selectNextWorkspace(Clutter.Left);
                     break;
                 case Clutter.ScrollDirection.DOWN:
-                    Main.wm.actionMoveWorkspaceRight();
+                    this.box.selectNextWorkspace(Clutter.Right);
                     break;
             }
         }
