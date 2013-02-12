@@ -1742,8 +1742,6 @@ ExpoThumbnailsBox.prototype = {
         let availX = (box.x2 - box.x1) - totalSpacingX - (spacing * 2) ;
         let availY = (box.y2 - box.y1) - 2 * spacing - nRows * extraHeight - (nRows - 1) * thTitleMargin;
         let screen = (box.x2 - box.x1);
-        let boxWidth = box.x2 - box.x1;
-        let boxHeight = box.y2 - box.y1;
 
         let newScaleX = (availX / nColumns) / portholeWidth;
         let newScaleY = (availY / nRows) / portholeHeight;
@@ -1838,9 +1836,11 @@ ExpoThumbnailsBox.prototype = {
 
                 x += thumbnailWidth + spacing;
                 y += (count + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
-                Mainloop.timeout_add(0, function() {
-                    thumbnail.setSizes(thumbnailWidth / newScale, thumbnailHeight / newScale);
-                });
+                if (scale) {
+                    Mainloop.timeout_add(0, function() {
+                        thumbnail.setSizes(thumbnailWidth / scale, thumbnailHeight / scale);
+                    });
+                }
                 ++count;
             } else {
                 let childBox = new Clutter.ActorBox();
