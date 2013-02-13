@@ -941,6 +941,10 @@ ExpoWorkspaceThumbnail.prototype = {
             // this workspace is already being removed
             return;
         }
+        if (this.box.scrollData) {
+            // in the middle of a scroll operation, probably a mishap
+            return;
+        }
         if (global.screen.n_workspaces <= 1) {
             return;
         }
