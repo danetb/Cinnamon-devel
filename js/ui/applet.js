@@ -10,6 +10,8 @@ const AppletManager = imports.ui.appletManager;
 const Gtk = imports.gi.Gtk;
 const Util = imports.misc.util;
 const Pango = imports.gi.Pango;
+const Mainloop = imports.mainloop;
+const Flashspot = imports.ui.flashspot;
 
 const COLOR_ICON_HEIGHT_FACTOR = .875;  // Panel height factor for normal color icons
 const PANEL_FONT_DEFAULT_HEIGHT = 11.5; // px
@@ -90,7 +92,6 @@ Applet.prototype = {
     _init: function(orientation, panelHeight) {
         this.actor = new St.BoxLayout({ style_class: 'applet-box', reactive: true, track_hover: true });
         this._appletTooltip = new Tooltips.PanelItemTooltip(this, "", orientation);
-
         this.actor.connect('button-release-event', Lang.bind(this, this._onButtonReleaseEvent));  
 
         this._menuManager = new PopupMenu.PopupMenuManager(this);
@@ -123,7 +124,6 @@ Applet.prototype = {
             this._setAppletReactivity();
             this.finalizeContextMenu();
         }));
-
 	// Backward compatibility
 	this._applet_context_menu = this._appletContextMenu;
     },
@@ -190,6 +190,23 @@ Applet.prototype = {
         // Backward compatibility
         if (this.on_applet_added_to_panel) {
             this.on_applet_added_to_panel();
+        }
+    },
+
+    on_applet_added_to_panel: function(userEnabled) {
+        if (userEnabled) {
+            let [x, y] = this.actor.get_transformed_position();
+            let [w, h] = this.actor.get_transformed_size();
+            h = Math.max(h, this.panelHeight);
+
+            let flashspot = new Flashspot.Flashspot({ x : x, y : y, width: w, height: h});
+            flashspot.fire();
+            let timeoutId = Mainloop.timeout_add(300, Lang.bind(this, function() {
+                let flashspot = new Flashspot.Flashspot({ x : x, y : y, width: w, height: h});
+                flashspot.fire();
+                Mainloop.source_remove(timeoutId);
+                return false;
+            }));
         }
     },
 
@@ -282,7 +299,6 @@ Applet.prototype = {
             }
         }
     },
-
     // Backward compatibility
     set_applet_tooltip: function (text) {
         this.setAppletTooltip(text);
