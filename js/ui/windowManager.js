@@ -277,7 +277,7 @@ WindowManager.prototype = {
     },
 
     _shouldAnimate : function(actor) {
-        if (Main.modalCount) {
+        if (Main.modalCount && !this.forceAnimation) {
             // system is in modal state
             return false;
         }
@@ -1031,41 +1031,100 @@ WindowManager.prototype = {
     },
 
     _showWorkspaceSwitcher : function(display, screen, window, binding) {
-        if (binding.get_name() == 'switch-to-workspace-up') {
-        	Main.expo.toggle();
-        	return;                   
-        }
-        if (binding.get_name() == 'switch-to-workspace-down') {
-            Main.overview.toggle();
+        // We want to process workspace-switch event on key-release instead
+        // of on key-press, since that leads to less disturbing behavior
+        // when a key is kept pressed down for longer periods of time.
+        // In order to be able to handle key-press and key-release events
+        // more freely, we create a hidden window, make it modal and let
+        // it process keyboard events.
+        let actor = new St.Bin({reactive: true});
+        Main.uiGroup.add_actor(actor);
+        if (!Main.pushModal(actor)) {
+            actor.destroy();
             return;
         }
-        
-        if (screen.n_workspaces == 1)
-            return;
+        let cleanup = Lang.bind(this, function() {
+            if (!actor) {return;}
+            Main.popModal(actor);
+            actor.destroy();
+            actor = null;
+        });
 
-        let current_workspace_index = global.screen.get_active_workspace_index();
-        if (binding.get_name() == 'switch-to-workspace-left') {
-           this.actionMoveWorkspaceLeft();
-        }
-        else if (binding.get_name() == 'switch-to-workspace-right') {
-           this.actionMoveWorkspaceRight();
-        }
+        let pressEventCount = 0;
+        let done = false;
+
+        let timestamp = global.get_current_time(); // need to grab a valid timestamp now
+        let onKeyPressRelease = function(actor, event, pressEvent, timeout) {
+            let prolongedKeyPress = false;
+            if (!timeout) {
+                pressEventCount += (pressEvent ? 1 : 0);
+                prolongedKeyPress = pressEventCount > 0;
+            }
+            else {
+                prolongedKeyPress = true;
+            }
+
+            if (!done && (!pressEvent || prolongedKeyPress)) {
+                done = true;
+                this.forceAnimation = true; // required because we are in a modal state
+                try {
+                    if (binding.get_name() == 'switch-to-workspace-up') {
+                        if (!prolongedKeyPress) {
+                            cleanup();
+                            Main.expo.toggle();
+                        }
+                        else {
+                           this.actionMoveWorkspaceUp(timestamp);
+                        }
+                    }
+                    if (binding.get_name() == 'switch-to-workspace-down') {
+                        if (!prolongedKeyPress) {
+                            cleanup();
+                            Main.overview.toggle();
+                        }
+                        else {
+                           this.actionMoveWorkspaceDown(timestamp);
+                        }
+                    }
+                    if (binding.get_name() == 'switch-to-workspace-left') {
+                       this.actionMoveWorkspaceLeft(timestamp);
+                    }
+                    if (binding.get_name() == 'switch-to-workspace-right') {
+                       this.actionMoveWorkspaceRight(timestamp);
+                    }
+                }
+                finally {
+                    delete this.forceAnimation;
+                }
+            }
+            if (done && !pressEvent && !timeout) {
+                cleanup();
+            }
+            return true;
+        };
+        // We don't get the first key event until after 400 to 500 milliseconds,
+        // so we use a timer to speed up the responsiveness.
+        let timerId = Mainloop.timeout_add(250, Lang.bind(this, function() {
+            (Lang.bind(this, onKeyPressRelease))(null, null, false, true);
+        }));
+        actor.connect('key-press-event', Lang.bind(this, onKeyPressRelease, true));
+        actor.connect('key-release-event', Lang.bind(this, onKeyPressRelease, false));
     },
 
-    actionMoveWorkspaceLeft: function() {
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.LEFT).activate(global.get_current_time());
+    actionMoveWorkspaceLeft: function(time) {
+        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.LEFT).activate(time || global.get_current_time());
     },
 
-    actionMoveWorkspaceRight: function() {
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.RIGHT).activate(global.get_current_time());
+    actionMoveWorkspaceRight: function(time) {
+        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.RIGHT).activate(time || global.get_current_time());
     },
 
-    actionMoveWorkspaceUp: function() {
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.UP).activate(global.get_current_time());
+    actionMoveWorkspaceUp: function(time) {
+        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.UP).activate(time || global.get_current_time());
     },
 
-    actionMoveWorkspaceDown: function() {
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.DOWN).activate(global.get_current_time());
+    actionMoveWorkspaceDown: function(time) {
+        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.DOWN).activate(time || global.get_current_time());
     },
 
     actionFlipWorkspaceLeft: function() {
