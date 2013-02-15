@@ -1637,6 +1637,14 @@ ExpoThumbnailsBox.prototype = {
     getNumberOfColumnsAndRows: function(nWorkspacesIn) {
         let nWorkspaces = nWorkspacesIn || this.getVisibleThumbnailCount();
         let asGrid  = getViewAsGrid();
+        if (nWorkspaces > 1 && asGrid && Main.getNumberOfWorkspaceRows() > 1) {
+            // the number is really just a maximum, and the real number of
+            // rows and columns is normalized by muffin, which this algorithm
+            // tries to emulate.
+            let nColumns = Math.ceil(nWorkspaces / Main.getNumberOfWorkspaceRows());
+            let nRows = Math.floor((nWorkspaces-1) / nColumns) + 1;
+            return [nColumns, nRows];
+        }
         let nColumns = asGrid ? Math.ceil(Math.sqrt(nWorkspaces)) : nWorkspaces;
         let nRows = Math.ceil(nWorkspaces/nColumns);
         

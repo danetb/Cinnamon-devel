@@ -370,8 +370,14 @@
     <key type="i" name="number-workspaces">
         <default>2</default>
         <_summary>Number of workspaces in Cinnamon session</_summary>
-        <_description>
-                Number of Workspaces</_description>
+        <_description>Number of Workspaces</_description>
+    </key>
+
+    <key type="i" name="number-workspace-rows">
+        <default>1</default>
+        <range min="1" max="4" />
+        <_summary>Number of workspace rows</_summary>
+        <_description>Number of Workspace Rows</_description>
     </key>
 
     <key name="overview-corner" type="as">

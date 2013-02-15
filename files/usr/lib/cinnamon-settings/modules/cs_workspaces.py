@@ -28,6 +28,10 @@ class Module:
         sidePage.add_widget(GSettingsCheckButton(_("Only use workspaces on primary monitor (requires Cinnamon restart)"), "org.cinnamon.overrides", "workspaces-only-on-primary", None), True)
         sidePage.add_widget(GSettingsCheckButton(_("Display Expo view as a grid"), "org.cinnamon", "workspace-expo-view-as-grid", None))
 
+        box = IndentedHBox()
+        box.add(GSettingsSpinButton(_("Number of workspace rows"), "org.cinnamon", "number-workspace-rows", None, 1, 4, 1, 1, None))
+        sidePage.add_widget(box, True)
+
     def shouldLoad(self):
         return True
 

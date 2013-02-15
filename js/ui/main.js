@@ -125,11 +125,22 @@ function _initRecorder() {
     });
 }
 
+let _numberOfWorkspaceRows = 1;
+
+function getNumberOfWorkspaceRows() {
+    return _numberOfWorkspaceRows;
+}
+
 function _initUserSession() {
     _initRecorder();
 
-    global.screen.override_workspace_layout(Meta.ScreenCorner.TOPLEFT, false, 1, -1);
+    let setupWorkspaceLayout = function() {
+        _numberOfWorkspaceRows = global.settings.get_int('number-workspace-rows') || 1;
+        global.screen.override_workspace_layout(Meta.ScreenCorner.TOPLEFT, false, _numberOfWorkspaceRows, -1);
+    };
+    global.settings.connect('changed::number-workspace-rows', setupWorkspaceLayout);
 
+    setupWorkspaceLayout();
     ExtensionSystem.init();
 
     Meta.keybindings_set_custom_handler('panel-run-dialog', function() {
@@ -361,7 +372,15 @@ function _trimWorkspaceNames(index) {
 }
 
 function _makeDefaultWorkspaceName(index) {
-    return _("WORKSPACE") + " " + (index + 1).toString();
+    if (_numberOfWorkspaceRows < 2) {
+        return _("WORKSPACE %s").format(index + 1);
+    }
+    else {
+        let numCols = Math.ceil(global.screen.n_workspaces / _numberOfWorkspaceRows);
+        let row = Math.floor(index / numCols) + 1;
+        let col = (index % numCols) + 1;
+        return _("WORKSPACE %s:%s").format(row, col);
+    }
 }
 
 function setWorkspaceName(index, name) {
