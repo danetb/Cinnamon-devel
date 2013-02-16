@@ -1799,8 +1799,7 @@ ExpoThumbnailsBox.prototype = {
                 let column = count % nColumns;
                 let row = Math.floor(count / nColumns);
                 let cItemsInRow = Math.min(nWorkspaces - (row * nColumns), nColumns);
-                x = column > 0 ? x : calcPaddingX(cItemsInRow);
-                let rowMultiplier = row + 1;
+                x = column > 0 ? x : calcPaddingX(Main.getNumberOfWorkspaceRows() > 1 ? nColumns : cItemsInRow);
 
                 // We might end up with thumbnailHeight being something like 99.33
                 // pixels. To make this work and not end up with a gap at the bottom,
