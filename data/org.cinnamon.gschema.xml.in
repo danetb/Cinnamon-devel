@@ -373,9 +373,15 @@
         <_description>Number of Workspaces</_description>
     </key>
 
+    <key type="b" name="multiple-workspace-rows-enabled">
+        <default>false</default>
+        <_summary>Enable or disable having more than one row of workspaces</_summary>
+        <_description>Enable Multiple Workspace Rows</_description>
+    </key>
+
     <key type="i" name="number-workspace-rows">
-        <default>1</default>
-        <range min="1" max="4" />
+        <default>2</default>
+        <range min="2" max="8" />
         <_summary>Number of workspace rows</_summary>
         <_description>Number of Workspace Rows</_description>
     </key>

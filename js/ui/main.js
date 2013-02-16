@@ -135,10 +135,12 @@ function _initUserSession() {
     _initRecorder();
 
     let setupWorkspaceLayout = function() {
-        _numberOfWorkspaceRows = global.settings.get_int('number-workspace-rows') || 1;
+        let enabled = global.settings.get_boolean('multiple-workspace-rows-enabled') || false;
+        _numberOfWorkspaceRows = !enabled ? 1 : (global.settings.get_int('number-workspace-rows') || 2);
         global.screen.override_workspace_layout(Meta.ScreenCorner.TOPLEFT, false, _numberOfWorkspaceRows, -1);
     };
     global.settings.connect('changed::number-workspace-rows', setupWorkspaceLayout);
+    global.settings.connect('changed::multiple-workspace-rows-enabled', setupWorkspaceLayout);
 
     setupWorkspaceLayout();
     ExtensionSystem.init();
