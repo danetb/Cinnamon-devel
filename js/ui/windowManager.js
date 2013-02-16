@@ -1012,11 +1012,12 @@ WindowManager.prototype = {
         }
         let workspace = global.screen.get_active_workspace().get_neighbor(direction);
         if (workspace != global.screen.get_active_workspace()) {
-            workspace.activate(global.get_current_time());
+            let timestamp = global.get_current_time();
+            workspace.activate(timestamp);
             Mainloop.idle_add(Lang.bind(this, function() {
                 // Unless this is done a bit later, window is sometimes not activated
                 window.change_workspace(workspace);
-                window.activate(global.get_current_time());
+                window.activate(timestamp);
             }));
         }
     },
