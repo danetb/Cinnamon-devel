@@ -858,22 +858,17 @@ function _globalKeyPressHandler(actor, event) {
     }
 
     switch (action) {
-        // left/right would effectively act as synonyms for up/down if we enabled them;
-        // but that could be considered confusing; we also disable them in the main view.
-        //
          case Meta.KeyBindingAction.WORKSPACE_LEFT:
-             wm.actionMoveWorkspaceLeft();
+             wm.switchWorkspace('switch-to-workspace-left');
              return true;
          case Meta.KeyBindingAction.WORKSPACE_RIGHT:
-             wm.actionMoveWorkspaceRight();
+             wm.switchWorkspace('switch-to-workspace-right');
              return true;
         case Meta.KeyBindingAction.WORKSPACE_UP:
-            overview.hide();   
-            expo.hide();                  
+             wm.switchWorkspace('switch-to-workspace-up');
             return true;
         case Meta.KeyBindingAction.WORKSPACE_DOWN:
-            overview.hide();
-            expo.hide();
+             wm.switchWorkspace('switch-to-workspace-down');
             return true;
         case Meta.KeyBindingAction.PANEL_RUN_DIALOG:
         case Meta.KeyBindingAction.COMMAND_2:

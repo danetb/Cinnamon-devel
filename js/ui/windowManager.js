@@ -1031,12 +1031,18 @@ WindowManager.prototype = {
     },
 
     _showWorkspaceSwitcher : function(display, screen, window, binding) {
+        this.switchWorkspace(binding.get_name(), true);
+    },
+
+    switchWorkspace : function(bindingName, forceAnimation) {
         // We want to process workspace-switch event on key-release instead
         // of on key-press, since that leads to less disturbing behavior
         // when a key is kept pressed down for longer periods of time.
         // In order to be able to handle key-press and key-release events
         // more freely, we create a hidden window, make it modal and let
         // it process keyboard events.
+        let fromModal = Main.modalCount > 0;
+
         let actor = new St.Bin({reactive: true});
         Main.uiGroup.add_actor(actor);
         if (!Main.pushModal(actor)) {
@@ -1066,30 +1072,40 @@ WindowManager.prototype = {
 
             if (!done && (!pressEvent || prolongedKeyPress)) {
                 done = true;
-                this.forceAnimation = true; // required because we are in a modal state
+                this.forceAnimation = forceAnimation; // we are in a modal state already, so must override to have animations
                 try {
-                    if (binding.get_name() == 'switch-to-workspace-up') {
+                    if (bindingName == 'switch-to-workspace-up') {
                         if (!prolongedKeyPress) {
                             cleanup();
-                            Main.expo.toggle();
+                            if (fromModal) {
+                                Main.overview.hide();
+                                Main.expo.hide();
+                            } else {
+                                Main.expo.toggle();
+                            }
                         }
                         else {
                            this.actionMoveWorkspaceUp(timestamp);
                         }
                     }
-                    if (binding.get_name() == 'switch-to-workspace-down') {
+                    if (bindingName == 'switch-to-workspace-down') {
                         if (!prolongedKeyPress) {
                             cleanup();
-                            Main.overview.toggle();
+                            if (fromModal) {
+                                Main.overview.hide();
+                                Main.expo.hide();
+                            } else {
+                                Main.overview.toggle();
+                            }
                         }
                         else {
                            this.actionMoveWorkspaceDown(timestamp);
                         }
                     }
-                    if (binding.get_name() == 'switch-to-workspace-left') {
+                    if (bindingName == 'switch-to-workspace-left') {
                        this.actionMoveWorkspaceLeft(timestamp);
                     }
-                    if (binding.get_name() == 'switch-to-workspace-right') {
+                    if (bindingName == 'switch-to-workspace-right') {
                        this.actionMoveWorkspaceRight(timestamp);
                     }
                 }
