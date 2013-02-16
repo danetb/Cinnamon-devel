@@ -882,11 +882,11 @@ WindowManager.prototype = {
                 if (!window.meta_window.showing_on_its_workspace())
                     continue;
 
-                if (window.get_workspace() == from) {
+                if (window.get_workspace() == from || window.meta_window.is_on_all_workspaces()) {
                     chunk.windows.push({ window: window,
                                               parent: window.get_parent() });
                     window.reparent(chunk.outGroup);
-                } else if (window.get_workspace() == to) {
+                } else if (window.get_workspace() == to || window.meta_window.is_on_all_workspaces()) {
                     chunk.windows.push({ window: window,
                                               parent: window.get_parent() });
                     window.reparent(chunk.inGroup);
