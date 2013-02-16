@@ -372,7 +372,7 @@ function _trimWorkspaceNames(index) {
 }
 
 function _makeDefaultWorkspaceName(index) {
-    if (_numberOfWorkspaceRows < 2) {
+    if (true || _numberOfWorkspaceRows < 2) {
         return _("WORKSPACE %s").format(index + 1);
     }
     else {
