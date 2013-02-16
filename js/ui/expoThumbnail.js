@@ -1343,7 +1343,8 @@ ExpoThumbnailsBox.prototype = {
         let lastIndex = this.thumbnails.length - 1;
         
         let [nColumns, nRows] = this.getNumberOfColumnsAndRows();
-        let newIndex = GridNavigator.nextIndex(this.thumbnails.length, nColumns, prevIndex, symbol);
+        let invertedNavigation = getViewAsGrid() && !Main.getWorkspaceRowsTopDown();
+        let newIndex = GridNavigator.nextIndex(this.thumbnails.length, nColumns, prevIndex, symbol, invertedNavigation);
         if (newIndex < 0) {
             let index = symbol - 48 - 1; // convert '1' to index 0, etc
             if (index >= 0 && index < 10) {
@@ -1790,8 +1791,9 @@ ExpoThumbnailsBox.prototype = {
             return index >= this.leftIndex && index <= this.rightIndex;
         });
 
+        let topdown = Main.getWorkspaceRowsTopDown();
         let x;
-        let y = spacing + Math.floor((availY - nRows * thumbnailHeight) / 2);
+        let y = (topdown ? spacing + Math.floor((availY - nRows * thumbnailHeight) / 2) : box.y2 - Math.floor((availY - nRows * thumbnailHeight) / 2) - thumbnailHeight -spacing - extraHeight);
         let count = 0;
         for (let i = 0; i < this.thumbnails.length; i++) {
             let thumbnail = this.thumbnails[i];
@@ -1838,7 +1840,7 @@ ExpoThumbnailsBox.prototype = {
                 thumbnail.title.allocate(childBox, flags);
 
                 x += thumbnailWidth + spacing;
-                y += (count + 1) % nColumns > 0 ? 0 : thumbnailHeight + extraHeight + thTitleMargin;
+                y += (count + 1) % nColumns > 0 ? 0 : (topdown ? 1 : -1) * (thumbnailHeight + extraHeight + thTitleMargin);
                 ++count;
             } else {
                 let childBox = new Clutter.ActorBox();

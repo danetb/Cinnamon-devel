@@ -126,9 +126,14 @@ function _initRecorder() {
 }
 
 let _numberOfWorkspaceRows = 1;
+let _workspaceRowsTopDown = true;
 
 function getNumberOfWorkspaceRows() {
     return _numberOfWorkspaceRows;
+}
+
+function getWorkspaceRowsTopDown() {
+    return _workspaceRowsTopDown;
 }
 
 function _initUserSession() {
@@ -136,11 +141,14 @@ function _initUserSession() {
 
     let setupWorkspaceLayout = function() {
         let enabled = global.settings.get_boolean('multiple-workspace-rows-enabled') || false;
+        _workspaceRowsTopDown = !enabled ? true : global.settings.get_boolean('workspace-rows-top-down');
         _numberOfWorkspaceRows = !enabled ? 1 : (global.settings.get_int('number-workspace-rows') || 2);
-        global.screen.override_workspace_layout(Meta.ScreenCorner.TOPLEFT, false, _numberOfWorkspaceRows, -1);
+        global.screen.override_workspace_layout(
+            getWorkspaceRowsTopDown() ? Meta.ScreenCorner.TOPLEFT : Meta.ScreenCorner.BOTTOMLEFT, false, _numberOfWorkspaceRows, -1);
     };
     global.settings.connect('changed::number-workspace-rows', setupWorkspaceLayout);
     global.settings.connect('changed::multiple-workspace-rows-enabled', setupWorkspaceLayout);
+    global.settings.connect('changed::workspace-rows-top-down', setupWorkspaceLayout);
 
     setupWorkspaceLayout();
     ExtensionSystem.init();
