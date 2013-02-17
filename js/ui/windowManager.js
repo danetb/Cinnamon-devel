@@ -855,7 +855,9 @@ WindowManager.prototype = {
         let lastIndex = 0;
         // In a multi-monitor scenario, we need to work one monitor at a time,
         // protecting the other monitors from having unrelated windows swooshing by.
-        Main.layoutManager.monitors.forEach(function(monitor,index) {
+        Main.layoutManager.monitors.filter(function(monitor, index) {
+            return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
+        }, this).forEach(function(monitor, index) {
             lastIndex = index;
             let chunk = {};
             chunks.push(chunk);
