@@ -1082,7 +1082,7 @@ WindowManager.prototype = {
                 done = true;
                 this.forceAnimation = forceAnimation; // we are in a modal state already, so must override to have animations
                 try {
-                    if (!fromModal && prolongedKeyPress && !showing && actor) {
+                    if (!fromModal && prolongedKeyPress && !showing && global.screen.n_workspaces > 1) {
                         Main.layoutManager.monitors.filter(function(monitor, index) {
                             return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
                         }, this).forEach(function(monitor) {
