@@ -1643,7 +1643,11 @@ ExpoThumbnailsBox.prototype = {
         let nWorkspaces = nWorkspacesIn || this.getVisibleThumbnailCount();
         let asGrid  = getViewAsGrid();
         if (nWorkspaces > 1 && asGrid && Main.getNumberOfWorkspaceRows() > 1) {
-            return Main.getWorkspaceGeometry();
+            if (!this.isZoomedIn()) {
+                return Main.getWorkspaceGeometry();
+            }
+            // else, if we are zoomed in, we want to use the screen space as efficiently as
+            // possible, so we ignore the current workspace geometry
         }
         let nColumns = asGrid ? Math.ceil(Math.sqrt(nWorkspaces)) : nWorkspaces;
         let nRows = Math.ceil(nWorkspaces/nColumns);
