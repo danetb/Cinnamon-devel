@@ -1197,6 +1197,10 @@ ExpoThumbnailsBox.prototype = {
         });
     },
 
+    isZoomedIn: function() {
+        return this.getVisibleThumbnailCount() != this.thumbnails.length;
+    },
+
     getVisibleThumbnailCount: function() {
         return this._visibleThumbnailCount || this.thumbnails.length;
     },
@@ -1639,12 +1643,7 @@ ExpoThumbnailsBox.prototype = {
         let nWorkspaces = nWorkspacesIn || this.getVisibleThumbnailCount();
         let asGrid  = getViewAsGrid();
         if (nWorkspaces > 1 && asGrid && Main.getNumberOfWorkspaceRows() > 1) {
-            // the number is really just a maximum, and the real number of
-            // rows and columns is normalized by muffin, which this algorithm
-            // tries to emulate.
-            let nColumns = Math.ceil(nWorkspaces / Main.getNumberOfWorkspaceRows());
-            let nRows = Math.floor((nWorkspaces-1) / nColumns) + 1;
-            return [nColumns, nRows];
+            return Main.getWorkspaceGeometry();
         }
         let nColumns = asGrid ? Math.ceil(Math.sqrt(nWorkspaces)) : nWorkspaces;
         let nRows = Math.ceil(nWorkspaces/nColumns);

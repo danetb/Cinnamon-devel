@@ -131,6 +131,18 @@ let _workspaceRowsTopDown = true;
 function getNumberOfWorkspaceRows() {
     return _numberOfWorkspaceRows;
 }
+/*
+ * Calculates the current workspace geometry, based on the current number
+ * of workspace.
+ * 
+ * @return [num-columns, num-rows]
+ */
+function getWorkspaceGeometry() {
+    let nWorkspaces = global.screen.n_workspaces
+    let nColumns = Math.ceil(nWorkspaces / _numberOfWorkspaceRows);
+    let nRows = Math.floor((nWorkspaces-1) / nColumns) + 1;
+    return [nColumns, nRows];
+}
 
 function getWorkspaceRowsTopDown() {
     return _workspaceRowsTopDown;
