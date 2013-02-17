@@ -9,6 +9,7 @@ const Meta = imports.gi.Meta;
 const St = imports.gi.St;
 const Cinnamon = imports.gi.Cinnamon;
 const Signals = imports.signals;
+const GnomeSession = imports.misc.gnomeSession;
 
 const FileUtils = imports.misc.fileUtils;
 const Main = imports.ui.main;
@@ -30,6 +31,13 @@ const EXEC_KEY = 'exec';
 const EXEC_ARG_KEY = 'exec-arg';
 
 const DIALOG_GROW_TIME = 0.1;
+
+const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
+
+const PANEL_LAUNCHERS_KEY = 'panel-launchers';
+const CUSTOM_LAUNCHERS_PATH = GLib.get_home_dir() + '/.cinnamon/panel-launchers';
+
+const ICONSIZE = 32;
 
 function CommandCompleter() {
     this._init();
@@ -210,6 +218,84 @@ __proto__: ModalDialog.ModalDialog.prototype,
                                  };
 
 
+        this._launchers = [];
+
+        this._launcherLayout = new St.BoxLayout({ vertical:    false });
+        this.contentLayout.add(this._launcherLayout, { y_align: St.Align.START });
+        global.focus_manager.add_group(this._launcherLayout);
+
+        let addSeparator = Lang.bind(this, function() {
+            let box = new St.Bin({ style_class: 'separator'});
+            this._launcherLayout.add(box, St.Align.MIDDLE);
+        });
+
+        let createBunt = Lang.bind(this, function(icon) {
+            let actor = new St.Bin({ style_class: 'panel-launcher',
+                can_focus: true,
+                x_fill: true,
+                y_fill: false
+            });
+            actor.add_actor(icon);
+            this._launcherLayout.add(actor, St.Align.MIDDLE);
+            return actor;
+        });
+
+        let apps = this.loadApps();
+        for (var i in apps){
+            let app = apps[i];
+            let icon = app.create_icon_texture(ICONSIZE);
+            let actor = createBunt(icon);
+            let launcher = {
+                actor: actor,
+                launch: function() {
+                    app.open_new_window(-1);
+                }
+            };
+            this._launchers.push(launcher);
+        }
+
+        addSeparator();
+
+        apps = this.loadLaunchers();
+        for (var i in apps){
+            let appe = apps[i];
+            let app = appe[0];
+            let appinfo = appe[1];
+
+            let icon = app ? app.create_icon_texture(ICONSIZE) : null;
+            if (!icon) {
+                icon = St.TextureCache.get_default().load_gicon(null, appinfo.get_icon(), 32);
+            }
+            let actor = createBunt(icon);
+            let launcher = {
+                actor: actor,
+                launch: function() { app ?
+                    app.open_new_window(-1) :
+                    appinfo.launch([], null);
+                }
+            };
+            this._launchers.push(launcher);
+        }
+        addSeparator();
+
+        let session = new GnomeSession.SessionManager();
+        [{name: "gnome-logout", action: function() {session.LogoutRemote(0);}},
+            {name: "gnome-shutdown", action: function() {session.ShutdownRemote();}}
+        ].forEach(function(action) {
+            let icon = new St.Icon({icon_name: action.name, icon_size: ICONSIZE, icon_type: St.IconType.FULLCOLOR});
+            let actor = createBunt(icon);
+            let launcher = {
+                actor: actor,
+                launch: function() {
+                    action.action();
+                }
+            };
+            this._launchers.push(launcher);
+        }, this);
+
+        this.iconIndex = 0;
+        this.inLaunchers = false;
+
         let label = new St.Label({ style_class: 'run-dialog-label',
                                    text: _("Please enter a command:") });
 
@@ -258,10 +344,16 @@ __proto__: ModalDialog.ModalDialog.prototype,
             let symbol = e.get_key_symbol();
             if (symbol == Clutter.Return || symbol == Clutter.KP_Enter) {
                 this.popModal();
-                if (Cinnamon.get_event_state(e) & Clutter.ModifierType.CONTROL_MASK)
-                    this._run(o.get_text(), true);
-                else
-                    this._run(o.get_text(), false);
+                let command = o.get_text().trim();
+                if (command.length) {
+                    if (Cinnamon.get_event_state(e) & Clutter.ModifierType.CONTROL_MASK)
+                        this._run(command, true);
+                    else
+                        this._run(command, false);
+                }
+                else if (this.inLaunchers) {
+                    this._launchers[this.iconIndex].launch();
+                }
                 if (!this._commandError)
                     this.close();
                 else {
@@ -287,31 +379,72 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 return false;
             }
             if (symbol == Clutter.Tab) {
-                let text = o.get_text();
-                let prefix;
-                if (text.lastIndexOf(' ') == -1)
-                    prefix = text;
-                else
-                    prefix = text.substr(text.lastIndexOf(' ') + 1);
-                let [postfix, completions] = this._getCompletion(prefix);
-                if (postfix != null && postfix.length > 0) {
-                    o.insert_text(postfix, -1);
-                    o.set_cursor_position(text.length + postfix.length);
-                    if (postfix[postfix.length - 1] == '/')
-                        this._getCompletion(text + postfix + 'a');
-                }
-                if (!postfix && completions.length > 0 && prefix.length > 2) {
-                    this._completionBox.set_text(completions.join("\n"));
-                    if (completions.length > 1) {
-                        this._completionBox.show();
+                if (!this.inLaunchers) {
+                    let text = o.get_text().trim();
+                    if (text.length) {
+                        let prefix;
+                        if (text.lastIndexOf(' ') == -1)
+                            prefix = text;
+                        else
+                            prefix = text.substr(text.lastIndexOf(' ') + 1);
+                        let [postfix, completions] = this._getCompletion(prefix);
+                        if (postfix != null && postfix.length > 0) {
+                            o.insert_text(postfix, -1);
+                            o.set_cursor_position(text.length + postfix.length);
+                            if (postfix[postfix.length - 1] == '/')
+                                this._getCompletion(text + postfix + 'a');
+                        }
+                        if (!postfix && completions.length > 0 && prefix.length > 2) {
+                            this._completionBox.set_text(completions.join("\n"));
+                            if (completions.length > 1) {
+                                this._completionBox.show();
+                            }
+                        }
+                    }
+                    else {
+                        if (this._launchers.length) {
+                            this.inLaunchers = true;
+                            this._launchers[this.iconIndex].actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                        }
                     }
                 }
+                else {
+                    this.inLaunchers = false;
+                    this._launchers[this.iconIndex].actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                }
                 return true;
+            }
+            if (symbol == Clutter.Left || symbol == Clutter.Right || symbol == Clutter.Home || symbol == Clutter.End) {
+                let entering = !this.inLaunchers;
+                if (this.inLaunchers || !o.get_text().length) {
+                    this.inLaunchers = true;
+                    this._launchers[this.iconIndex].actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                    if (!entering && (symbol == Clutter.Left || symbol == Clutter.Right)) {
+                        let increment = symbol == Clutter.Right ? 1 : - 1;
+                        this.iconIndex = Math.max(0, Math.min(this._launchers.length - 1, (this.iconIndex + increment + this._launchers.length) % this._launchers.length));
+                    }
+                    if (symbol == Clutter.Home) {
+                        this.iconIndex = 0;
+                    }
+                    if (symbol == Clutter.End) {
+                        this.iconIndex = this._launchers.length - 1;
+                    }
+                    this._launchers[this.iconIndex].actor.add_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                    return true;
+                }
+                return false;
+            }
+            if (symbol == Clutter.Up || symbol == Clutter.Down) {
+                if (this.inLaunchers) {
+                    this.inLaunchers = false;
+                    this._launchers[this.iconIndex].actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+                }
+                return false;
             }
             if (symbol == Clutter.BackSpace) {
                 this._completionBox.hide();
             }
-            if (this._completionBox.get_text() != "" &&
+            if (this._completionBox.get_text().trim().length > 0 &&
                 this._completionBox.visible) {
                 Mainloop.timeout_add(500, Lang.bind(this, function() { // Don't do it instantly to avoid "flashing"
                     let text = this._entryText.get_text();
@@ -412,12 +545,43 @@ __proto__: ModalDialog.ModalDialog.prototype,
         }
     },
 
+    loadApps: function() {
+        let apps = [];
+        let launchers = global.settings.get_strv('favorite-apps');
+        let appSys = Cinnamon.AppSystem.get_default();
+        for ( let i = 0; i < launchers.length; ++i ) {
+            let app = appSys.lookup_app(launchers[i]);
+            if (app) {
+                apps.push(app);
+            }
+        }
+        return apps;
+    },
+
+    loadLaunchers: function() {
+        let apps = [];
+        let desktopFiles = global.settings.get_strv(PANEL_LAUNCHERS_KEY);
+        let appSys = Cinnamon.AppSystem.get_default();
+        for (var i in desktopFiles){
+            let app = appSys.lookup_app(desktopFiles[i]);
+            let appinfo;
+            if (!app) appinfo = Gio.DesktopAppInfo.new_from_filename(CUSTOM_LAUNCHERS_PATH+"/"+desktopFiles[i]);
+            if (app || appinfo) apps.push([app, appinfo]);
+        }
+        return apps;
+    },
+
     open: function() {
+
         this._history.lastItem();
         this._errorBox.hide();
         this._entryText.set_text('');
         this._completionBox.hide();
         this._commandError = false;
+        this.inLaunchers = false;
+        if (this._launchers.length > 0) {
+            this._launchers[this.iconIndex].actor.remove_style_class_name(DEMANDS_ATTENTION_CLASS_NAME);
+        }
 
         if (this._lockdownSettings.get_boolean(DISABLE_COMMAND_LINE_KEY))
             return;
