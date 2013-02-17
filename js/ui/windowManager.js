@@ -1041,7 +1041,8 @@ WindowManager.prototype = {
         // In order to be able to handle key-press and key-release events
         // more freely, we create a hidden window, make it modal and let
         // it process keyboard events.
-        let fromModal = Main.modalCount > 0;
+
+        let fromModal = Main.modalCount > 0; // Important: do this before going modal!
 
         let actor = new St.Bin({reactive: true});
         Main.uiGroup.add_actor(actor);
@@ -1049,18 +1050,23 @@ WindowManager.prototype = {
             actor.destroy();
             return;
         }
+        let osdActors = [];
         let cleanup = Lang.bind(this, function() {
             if (!actor) {return;}
             Main.popModal(actor);
             actor.destroy();
+            osdActors.forEach(function(actor) {
+                actor.destroy();
+            });
             actor = null;
         });
 
         let pressEventCount = 0;
         let done = false;
-
+        let showing = false;
         let timestamp = global.get_current_time(); // need to grab a valid timestamp now
-        let onKeyPressRelease = function(actor, event, pressEvent, timeout) {
+
+        let onKeyPressRelease = function(actor_unused, event, pressEvent, timeout) {
             let prolongedKeyPress = false;
             if (!timeout) {
                 pressEventCount += (pressEvent ? 1 : 0);
@@ -1074,6 +1080,44 @@ WindowManager.prototype = {
                 done = true;
                 this.forceAnimation = forceAnimation; // we are in a modal state already, so must override to have animations
                 try {
+                    if (!fromModal && prolongedKeyPress && !showing && actor) {
+                        Main.layoutManager.monitors.filter(function(monitor, index) {
+                            return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
+                        }, this).forEach(function(monitor) {
+                            let osd = new St.Bin({reactive: false});
+                            Main.uiGroup.add_actor(osd);
+                            let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
+                            osd.add_actor(dialogLayout);
+
+                            let cells = [];
+                            const INACTIVE_STYLE = "background-color: rgb(0,0,0)";
+                            const ACTIVE_STYLE = "background-color: rgb(0,255,0)";
+                            let activeWsIndex = global.screen.get_active_workspace_index();
+                            let [columnCount, rowCount] = Main.getWorkspaceGeometry();
+                            let cellCount = 0;
+                            for (let r = 0; r < rowCount; ++r) {
+                                let row = new St.BoxLayout({});
+                                dialogLayout.add_actor(row);
+                                for (let c = 0; c < columnCount; ++c) {
+                                    let cell = new St.BoxLayout({ style_class: cellCount < global.screen.n_workspaces ? 'modal-dialog' : null});
+                                    cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
+                                    ++cellCount;
+                                    row.add_actor(cell);
+                                    cells.push(cell);
+                                }
+                            }
+                            let switchConnection = Connector.connect(global.window_manager, 'switch-workspace', function() {
+                                cells[activeWsIndex].style = INACTIVE_STYLE;
+                                activeWsIndex = global.screen.get_active_workspace_index();
+                                cells[activeWsIndex].style = ACTIVE_STYLE;
+                            });
+                            switchConnection.tie(osd);
+                            osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
+                            osdActors.push(osd);
+                        }, this);
+                        actor.show();
+                        showing = true;
+                    }
                     if (bindingName == 'switch-to-workspace-up') {
                         if (!prolongedKeyPress) {
                             cleanup();
