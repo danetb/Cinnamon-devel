@@ -138,7 +138,7 @@ function getNumberOfWorkspaceRows() {
  * @return [num-columns, num-rows]
  */
 function getWorkspaceGeometry() {
-    let nWorkspaces = global.screen.n_workspaces
+    let nWorkspaces = global.screen.n_workspaces;
     let nColumns = Math.ceil(nWorkspaces / _numberOfWorkspaceRows);
     let nRows = Math.floor((nWorkspaces-1) / nColumns) + 1;
     return [nColumns, nRows];
