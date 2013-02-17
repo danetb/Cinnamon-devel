@@ -1,5 +1,7 @@
 // -*- mode: js; js-indent-level: 4; indent-tabs-mode: nil -*-
 
+const Lang = imports.lang;
+
 /* usage:
  * "let connection = connect(someObject, 'some-signal', someFunction [, ...])
  *  ///...
@@ -26,6 +28,11 @@ var connect = function() {
         },
         getTarget: function() {
             return target;
+        },
+        /* Ties the connection to an object, so it is automatically destroyed with the object.
+         */
+        tie: function(object) {
+            object.connect('destroy', Lang.bind(this, this.disconnect));
         }
     };
 };
@@ -64,5 +71,11 @@ Connector.prototype = {
             }, this);
             this.connections = null;
         }
+    },
+
+    /* Ties the connector to an object, so the connector is automatically destroyed with the object.
+     */
+    tie: function(object) {
+        object.connect('destroy', Lang.bind(this, this.destroy));
     }
 };
