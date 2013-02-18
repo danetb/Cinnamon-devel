@@ -188,7 +188,7 @@ ModalDialog.prototype = {
     },
 
     _fadeOpen: function() {
-        let monitor = Main.layoutManager.focusMonitor;
+        let monitor = Main.layoutManager.primaryMonitor;
 
         this._backgroundBin.set_position(monitor.x, monitor.y);
         this._backgroundBin.set_size(monitor.width, monitor.height);
