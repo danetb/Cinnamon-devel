@@ -1063,6 +1063,7 @@ WindowManager.prototype = {
                             osd.add_actor(dialogLayout);
 
                             let cells = [];
+                            let rows = [];
                             const INACTIVE_STYLE = "background-color: rgb(0,0,0)";
                             const ACTIVE_STYLE = "background-color: rgb(0,255,0)";
                             let activeWsIndex = global.screen.get_active_workspace_index();
@@ -1070,7 +1071,7 @@ WindowManager.prototype = {
                             let cellCount = 0;
                             for (let r = 0; r < rowCount; ++r) {
                                 let row = new St.BoxLayout({});
-                                dialogLayout.add_actor(row);
+                                rows.push(row);
                                 for (let c = 0; c < columnCount; ++c) {
                                     let cell = new St.BoxLayout({ style_class: cellCount < global.screen.n_workspaces ? 'modal-dialog' : null});
                                     cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
@@ -1079,6 +1080,10 @@ WindowManager.prototype = {
                                     cells.push(cell);
                                 }
                             }
+                            (Main.getWorkspaceRowsTopDown() ? rows : rows.reverse()).forEach(function(row) {
+                                dialogLayout.add_actor(row);
+                            });
+
                             let switchConnection = Connector.connect(global.window_manager, 'switch-workspace', function() {
                                 cells[activeWsIndex].style = INACTIVE_STYLE;
                                 activeWsIndex = global.screen.get_active_workspace_index();
