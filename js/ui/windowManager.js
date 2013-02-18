@@ -850,9 +850,7 @@ WindowManager.prototype = {
         let lastIndex = 0;
         // In a multi-monitor scenario, we need to work one monitor at a time,
         // protecting the other monitors from having unrelated windows swooshing by.
-        Main.layoutManager.monitors.filter(function(monitor, index) {
-            return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
-        }, this).forEach(function(monitor, index) {
+        this._forEachWorkspaceMonitor(function(monitor, index) {
             lastIndex = index;
             let chunk = {};
             chunks.push(chunk);
@@ -959,9 +957,7 @@ WindowManager.prototype = {
             let workspace_osd_x = global.settings.get_int("workspace-osd-x");
             let workspace_osd_y = global.settings.get_int("workspace-osd-y");
             let duration = global.settings.get_int("workspace-osd-duration") / 1000;
-            Main.layoutManager.monitors.filter(function(monitor, index) {
-                return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
-            }, this).forEach(function(monitor) {
+            this._forEachWorkspaceMonitor(function(monitor) {
                 let label = new St.Label({style_class:'workspace-osd'});
                 label.set_text(Main.getWorkspaceName(current_workspace_index));
                 label.set_opacity = 0;
@@ -1005,6 +1001,12 @@ WindowManager.prototype = {
 
     _showWorkspaceSwitcher : function(display, screen, window, binding) {
         this.switchWorkspace(binding.get_name(), true);
+    },
+
+    _forEachWorkspaceMonitor : function(callback, scope) {
+        Main.layoutManager.monitors.filter(function(monitor, index) {
+            return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
+        }, this).forEach(callback, scope);
     },
 
     switchWorkspace : function(bindingName, forceAnimation) {
@@ -1054,9 +1056,7 @@ WindowManager.prototype = {
                 this.forceAnimation = forceAnimation; // we are in a modal state already, so must override to have animations
                 try {
                     if (!fromModal && prolongedKeyPress && !showing && global.screen.n_workspaces > 1) {
-                        Main.layoutManager.monitors.filter(function(monitor, index) {
-                            return index === Main.layoutManager.primaryIndex || !this.workspacesOnlyOnPrimary;
-                        }, this).forEach(function(monitor) {
+                        this._forEachWorkspaceMonitor(function(monitor) {
                             let osd = new St.Bin({reactive: false});
                             Main.uiGroup.add_actor(osd);
                             let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
