@@ -1365,6 +1365,7 @@ ExpoThumbnailsBox.prototype = {
             }
             this.kbThumbnailIndex = index;
             this.activateSelectedWorkspace();
+            Main.wm.showWorkspaceOSD();
             return true; // handled
         }
 

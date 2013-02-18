@@ -821,8 +821,10 @@ WindowManager.prototype = {
     },
 
     _switchWorkspace : function(cinnamonwm, from, to, direction) {
-        this.showWorkspaceOSD();
-        if (!this._shouldAnimate()) {
+        if (this._shouldAnimate()) {
+            this.showWorkspaceOSD();
+        }
+        else {
             cinnamonwm.completed_switch_workspace();                                
             return;
         }
