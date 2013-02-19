@@ -949,22 +949,27 @@ function pushModal(actor, timestamp) {
     modalCount += 1;
     let actorDestroyId = actor.connect('destroy', function() {
         let index = _findModal(actor);
-        if (index >= 0)
+        if (index >= 0) {
             modalActorFocusStack.splice(index, 1);
+        }
     });
-    let curFocus = global.stage.get_key_focus();
-    let curFocusDestroyId;
-    if (curFocus != null) {
-        curFocusDestroyId = curFocus.connect('destroy', function() {
-            let index = _findModal(actor);
-            if (index >= 0)
+
+    let record = {
+        actor: actor,
+        focus: global.stage.get_key_focus(),
+        destroyId: actorDestroyId
+    };
+    if (record.focus != null) {
+        record.focusDestroyId = record.focus.connect('destroy', function() {
+            let index = _findModal(record.focus);
+            if (index >= 0) {
                 modalActorFocusStack[index].actor = null;
+            }
+            record.focus = null;
+            record.focusDestroyId = null;
         });
     }
-    modalActorFocusStack.push({ actor: actor,
-                                focus: curFocus,
-                                destroyId: actorDestroyId,
-                                focusDestroyId: curFocusDestroyId });
+    modalActorFocusStack.push(record);
 
     global.stage.set_key_focus(actor);
     return true;
