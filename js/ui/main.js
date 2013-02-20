@@ -961,10 +961,6 @@ function pushModal(actor, timestamp) {
     };
     if (record.focus != null) {
         record.focusDestroyId = record.focus.connect('destroy', function() {
-            let index = _findModal(record.focus);
-            if (index >= 0) {
-                modalActorFocusStack[index].actor = null;
-            }
             record.focus = null;
             record.focusDestroyId = null;
         });
