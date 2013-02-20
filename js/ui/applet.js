@@ -352,6 +352,7 @@ IconApplet.prototype = {
         }
     }
 };
+
 function initTextAppletCommon(proto) {
     return {
         __proto__: proto,
@@ -359,9 +360,9 @@ function initTextAppletCommon(proto) {
         _init: function(orientation, panelHeight) {
             proto._init.call(this, orientation, panelHeight);
             this._applet_label = new St.Label({ reactive: true, track_hover: true, style_class: 'applet-label'});
-            this._label_height = (this._panel_height / DEFAULT_PANEL_HEIGHT) * PANEL_FONT_DEFAULT_HEIGHT;
+            this._label_height = (this._panelHeight / DEFAULT_PANEL_HEIGHT) * PANEL_FONT_DEFAULT_HEIGHT;
             this._applet_label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
-            this.actor.add(this._applet_label, { y_align: St.Align.MIDDLE, y_fill: false });    
+            this.actor.add(this._applet_label, { y_align: St.Align.MIDDLE, y_fill: false });
         },
 
         set_applet_label: function (text) {

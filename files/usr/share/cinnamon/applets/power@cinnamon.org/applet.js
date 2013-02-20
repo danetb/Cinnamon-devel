@@ -201,7 +201,7 @@ MyApplet.prototype = {
             this._switchLabelDisplay(this._labelDisplay);
 
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            this.menu.addSettingsAction(_("Power Settings"), 'gnome-power-panel.desktop');
+            this.menu.addSettingsAction(_("Power Settings"), 'power');
 
             this.connector.addConnection(this._smProxy, 'PropertiesChanged', Lang.bind(this, this._devicesChanged));
             this._devicesChanged();            
