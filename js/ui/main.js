@@ -949,9 +949,8 @@ function pushModal(actor, timestamp) {
     modalCount += 1;
     let actorDestroyId = actor.connect('destroy', function() {
         let index = _findModal(actor);
-        if (index >= 0) {
+        if (index >= 0)
             modalActorFocusStack.splice(index, 1);
-        }
     });
 
     let record = {
