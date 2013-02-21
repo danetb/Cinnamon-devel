@@ -51,6 +51,7 @@ const HELP_TEXT = [
     _("a: Activate selected window without closing Alt-Tab"),
     _("h: Hide Alt-Tab so you can see what's underneath (toggle)"),
     _("Ctrl+w: Close selected window. Use with care!"),
+    _("F1: Show this quick-help screen"),
     "",
 ];
 
@@ -600,18 +601,18 @@ AltTabPopup.prototype = {
             {
                 label: _("Open Window Settings"),
                 focused: false,
-                action: Lang.bind(dialog, function(){
+                action: function() {
                     altTab.destroy();
-                    this.close();
+                    dialog.close();
                     Util.spawnCommandLine("cinnamon-settings windows");
-                })
+                }
             },
             {
                 label: _("Close"),
                 focused: true,
-                action: Lang.bind(dialog, function(){
-                    this.close();
-                })
+                action: function() {
+                    dialog.close();
+                }
             }
         ]);
         dialog.open();
