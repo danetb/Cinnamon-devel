@@ -961,6 +961,7 @@ WindowManager.prototype = {
             let duration = global.settings.get_int("workspace-osd-duration") / 1000;
             this._forEachWorkspaceMonitor(function(monitor) {
                 let label = new St.Label({style_class:'workspace-osd'});
+                this._showWorkspaceGrid(label);
                 label.set_text(Main.getWorkspaceName(current_workspace_index));
                 label.set_opacity = 0;
                 Main.layoutManager.addChrome(label, { visibleInFullscreen: false, affectsInputRegion: false });
@@ -983,6 +984,7 @@ WindowManager.prototype = {
                     transition: 'linear',
                     onComplete: function() {
                         Main.layoutManager.removeChrome(label);
+                        label.destroy();
                     }});
             }, this);
         }
@@ -1012,6 +1014,8 @@ WindowManager.prototype = {
     },
 
     _showWorkspaceGrid : function(guardian) {
+        if (this.showingOsdGrid) { return;}
+
         this._forEachWorkspaceMonitor(function(monitor) {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
@@ -1047,7 +1051,8 @@ WindowManager.prototype = {
             });
             switchConnection.tie(osd);
             osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
-            guardian.connect('destroy', function() {osd.destroy();});
+            this.showingOsdGrid = true;
+            guardian.connect('destroy', Lang.bind(this, function() {osd.destroy(); this.showingOsdGrid = false;}));
         }, this);
     },
 
