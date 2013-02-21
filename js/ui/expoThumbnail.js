@@ -7,6 +7,7 @@ const Meta = imports.gi.Meta;
 const Cinnamon = imports.gi.Cinnamon;
 const Signals = imports.signals;
 const St = imports.gi.St;
+const Util = imports.misc.util;
 const DND = imports.ui.dnd;
 const Main = imports.ui.main;
 const Tweener = imports.ui.tweener;
@@ -35,6 +36,31 @@ const DRAGGING_WINDOW_OPACITY = Math.round(255 * 0.8);
 const WINDOW_DND_SIZE = 256;
 
 const DEMANDS_ATTENTION_CLASS_NAME = "window-list-item-demands-attention";
+
+const HELP_TEXT = [
+    "",
+    _("Escape: Close Expo and return to the currently active workspace"),
+    _("Return: Activate the currently selected workspace and close Expo"),
+    _("Right arrow, Scroll-wheel down: Select next workspace"),
+    _("Left arrow, Scroll-wheel up: Select previous workspace"),
+    _("Home: Select first workspace"),
+    _("End: Select last workspace"),
+    _("g: Toggle grid mode on/off"),
+    _("o: Toggle permanent-overview-mode on/off"),
+    _("z: Toggle full zoom on/off"),
+    _("Ctrl+Plus, Ctrl+Scroll-wheel up: Zoom in one step"),
+    _("Ctrl+Minus, Ctrl+Scroll-wheel down: Zoom out one step"),
+    _("Ctrl+0 (zero): Zoom off"),
+    _("Plus, Insert, Click \"Plus\" icon: Add a workspace"),
+    _("Ctrl+w, Delete: Remove selected workspace"),
+    _("Click on window: Activate clicked-on window"),
+    _("Click on workspace: Activate clicked-on workspace"),
+    _("Middle-click on workspace: Remove clicked-on workspace"),
+    _("F1: Show this quick-help screen"),
+    _("F2, Click on workspace title: Edit workspace name"),
+    "",
+];
+
 
 let g_viewAsGrid = null;
 function getViewAsGrid() {
@@ -1278,6 +1304,10 @@ ExpoThumbnailsBox.prototype = {
                 this.activateSelectedWorkspace();
                 return true;
             }
+            if (symbol === Clutter.F1) {
+                this.showHelp();
+                return true;
+            }
             if (symbol === Clutter.F2) {
                 this.editWorkspaceTitle();
                 return true;
@@ -1961,6 +1991,39 @@ ExpoThumbnailsBox.prototype = {
                 delete this.scrollData;
             }
         }));
+    },
+
+    showHelp : function() {
+        let dialog = new ModalDialog.ModalDialog();
+
+        let label = new St.Label({text: _("Expo Quick Help")});
+        let bin = new St.Bin();
+        bin.child = label;
+        dialog.contentLayout.add(bin);
+        HELP_TEXT.forEach(function(text) {
+            let label = new St.Label({text: text});
+            dialog.contentLayout.add(label);
+        }, this);
+
+        dialog.setButtons([
+            {
+                label: _("Open Workspace Settings"),
+                focused: false,
+                action: function() {
+                    dialog.close();
+                    Main.expo.hide();
+                    Util.spawnCommandLine("cinnamon-settings workspaces");
+                }
+            },
+            {
+                label: _("Close"),
+                focused: true,
+                action: function() {
+                    dialog.close();
+                }
+            }
+        ]);
+        dialog.open();
     }
 };
 Signals.addSignalMethods(ExpoThumbnailsBox.prototype);
