@@ -1011,8 +1011,48 @@ WindowManager.prototype = {
         }, this).forEach(callback, scope);
     },
 
+    _showWorkspaceGrid : function(guardian) {
+        this._forEachWorkspaceMonitor(function(monitor) {
+            let osd = new St.Bin({reactive: false});
+            Main.uiGroup.add_actor(osd);
+            let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
+            osd.add_actor(dialogLayout);
+
+            let cells = [];
+            let rows = [];
+            const INACTIVE_STYLE = "background-color: rgb(0,0,0)";
+            const ACTIVE_STYLE = "background-color: rgb(0,255,0)";
+            let activeWsIndex = global.screen.get_active_workspace_index();
+            let [columnCount, rowCount] = Main.getWorkspaceGeometry();
+            let cellCount = 0;
+            for (let r = 0; r < rowCount; ++r) {
+                let row = new St.BoxLayout({});
+                rows.push(row);
+                for (let c = 0; c < columnCount; ++c) {
+                    let cell = new St.BoxLayout({ style_class: cellCount < global.screen.n_workspaces ? 'modal-dialog' : null});
+                    cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
+                    ++cellCount;
+                    row.add_actor(cell);
+                    cells.push(cell);
+                }
+            }
+            (Main.getWorkspaceRowsTopDown() ? rows : rows.reverse()).forEach(function(row) {
+                dialogLayout.add_actor(row);
+            });
+
+            let switchConnection = Connector.connect(global.window_manager, 'switch-workspace', function() {
+                cells[activeWsIndex].style = INACTIVE_STYLE;
+                activeWsIndex = global.screen.get_active_workspace_index();
+                cells[activeWsIndex].style = ACTIVE_STYLE;
+            });
+            switchConnection.tie(osd);
+            osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
+            guardian.connect('destroy', function() {osd.destroy();});
+        }, this);
+    },
+
     switchWorkspace : function(bindingName, forceAnimation) {
-        // We want to process workspace-switch event on key-release instead
+        // We want to process workspace-switch events on key-release instead
         // of on key-press, since that leads to less disturbing behavior
         // when a key is kept pressed down for longer periods of time.
         // In order to be able to handle key-press and key-release events
@@ -1027,14 +1067,11 @@ WindowManager.prototype = {
             actor.destroy();
             return;
         }
-        let osdActors = [];
+
         let cleanup = Lang.bind(this, function() {
             if (!actor) {return;}
             Main.popModal(actor);
             actor.destroy();
-            osdActors.forEach(function(actor) {
-                actor.destroy();
-            });
             actor = null;
         });
 
@@ -1058,44 +1095,7 @@ WindowManager.prototype = {
                 this.forceAnimation = forceAnimation; // we are in a modal state already, so must override to have animations
                 try {
                     if (!fromModal && prolongedKeyPress && !showing && global.screen.n_workspaces > 1) {
-                        this._forEachWorkspaceMonitor(function(monitor) {
-                            let osd = new St.Bin({reactive: false});
-                            Main.uiGroup.add_actor(osd);
-                            let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
-                            osd.add_actor(dialogLayout);
-
-                            let cells = [];
-                            let rows = [];
-                            const INACTIVE_STYLE = "background-color: rgb(0,0,0)";
-                            const ACTIVE_STYLE = "background-color: rgb(0,255,0)";
-                            let activeWsIndex = global.screen.get_active_workspace_index();
-                            let [columnCount, rowCount] = Main.getWorkspaceGeometry();
-                            let cellCount = 0;
-                            for (let r = 0; r < rowCount; ++r) {
-                                let row = new St.BoxLayout({});
-                                rows.push(row);
-                                for (let c = 0; c < columnCount; ++c) {
-                                    let cell = new St.BoxLayout({ style_class: cellCount < global.screen.n_workspaces ? 'modal-dialog' : null});
-                                    cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
-                                    ++cellCount;
-                                    row.add_actor(cell);
-                                    cells.push(cell);
-                                }
-                            }
-                            (Main.getWorkspaceRowsTopDown() ? rows : rows.reverse()).forEach(function(row) {
-                                dialogLayout.add_actor(row);
-                            });
-
-                            let switchConnection = Connector.connect(global.window_manager, 'switch-workspace', function() {
-                                cells[activeWsIndex].style = INACTIVE_STYLE;
-                                activeWsIndex = global.screen.get_active_workspace_index();
-                                cells[activeWsIndex].style = ACTIVE_STYLE;
-                            });
-                            switchConnection.tie(osd);
-                            osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
-                            osdActors.push(osd);
-                        }, this);
-                        actor.show();
+                        this._showWorkspaceGrid(actor);
                         showing = true;
                     }
                     if (bindingName == 'switch-to-workspace-up') {
@@ -1142,7 +1142,7 @@ WindowManager.prototype = {
             }
             return true;
         };
-        // We don't get the first key event until after 400 to 500 milliseconds,
+        // We don't get the first key-press event until after 400 to 500 milliseconds,
         // so we use a timer to speed up the responsiveness.
         let timerId = Mainloop.timeout_add(250, Lang.bind(this, function() {
             (Lang.bind(this, onKeyPressRelease))(null, null, false, true);
