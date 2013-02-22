@@ -472,6 +472,14 @@ AltTabPopup.prototype = {
             if (false) {
             } else if (keysym == Clutter.Escape) {
                 this.destroy();
+            } else if (keysym == Clutter.Return) {
+                this._finish();
+                return true;
+            }
+            return true;
+        }
+        else if (released) {
+            if (false) {
             } else if (keysym == Clutter.Tab) {
                 this._select(this._nextApp());
             } else if (keysym == Clutter.ISO_Left_Tab) {
@@ -484,9 +492,6 @@ AltTabPopup.prototype = {
                 this._select(Math.min(this._appIcons.length - 1, this._currentApp + SCROLL_AMOUNT));
             } else if (keysym == Clutter.Page_Up || keysym == Clutter.KP_Page_Up) {
                 this._select(Math.max(0, this._currentApp - SCROLL_AMOUNT));
-            } else if (keysym == Clutter.Return) {
-                this._finish();
-                return true;
             } else if (action == Meta.KeyBindingAction.PANEL_RUN_DIALOG) {
                 this.destroy();
                 Mainloop.idle_add(function() {
@@ -501,30 +506,6 @@ AltTabPopup.prototype = {
                 Mainloop.idle_add(function() {
                     (action == Meta.KeyBindingAction.WORKSPACE_DOWN ? Main.overview : Main.expo).show();
                 });
-            } else if (action == Meta.KeyBindingAction.SWITCH_GROUP || action == Meta.KeyBindingAction.SWITCH_WINDOWS) {
-                this._select(backwards ? this._previousApp() : this._nextApp());
-            } else {
-                if (keysym == Clutter.Left) {
-                    if (ctrlDown) {
-                        if (switchWorkspace(-1)) {
-                            return false;
-                        }
-                    }
-                    this._select(this._previousApp());
-                }
-                else if (keysym == Clutter.Right) {
-                    if (ctrlDown) {
-                        if (switchWorkspace(1)) {
-                            return false;
-                        }
-                    }
-                    this._select(this._nextApp());
-                }
-            }
-            return true;
-        }
-        else if (released) {
-            if (false) {
             } else if (keysym == Clutter.F1) {
                 this._showHelp();
             } else if (keysym == Clutter.KEY_space && !this._persistent) {
@@ -575,6 +556,23 @@ AltTabPopup.prototype = {
                     if (ignoredIndex >= 0) {
                         g_windowsToIgnore.splice(ignoredIndex, 1);
                     }
+                }
+            } else {
+                if (keysym == Clutter.Left) {
+                    if (ctrlDown) {
+                        if (switchWorkspace(-1)) {
+                            return false;
+                        }
+                    }
+                    this._select(this._previousApp());
+                }
+                else if (keysym == Clutter.Right) {
+                    if (ctrlDown) {
+                        if (switchWorkspace(1)) {
+                            return false;
+                        }
+                    }
+                    this._select(this._nextApp());
                 }
             }
             return true;
