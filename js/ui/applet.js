@@ -366,7 +366,7 @@ function initTextAppletCommon(proto) {
         },
 
         set_applet_label: function (text) {
-            this._applet_label.clutter_text.set_text(text);
+            this._applet_label.set_text(text);
         }
     };
 };
