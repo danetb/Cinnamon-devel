@@ -251,7 +251,6 @@ AltTabPopup.prototype = {
 
     refresh : function(binding, backward) {
         if (this._appSwitcher) {
-            this._clearPreview();
             this._destroyThumbnails();
             this._appSwitcher.actor.destroy();
         }
@@ -263,7 +262,6 @@ AltTabPopup.prototype = {
         let windows = [];
         let [currentIndex, forwardIndex, backwardIndex] = [-1, -1, -1];
 
-        g_allWsMode = binding && binding.search(/group/) < 0;
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
             let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
@@ -310,6 +308,12 @@ AltTabPopup.prototype = {
         this._appSwitcher.actor.opacity = 0;
         this.actor.show();
         this.actor.get_allocation_box();
+        
+        // if we are refreshing after already being shown, retain current selection, if possible
+        if (this._selectedWindow) {
+            forwardIndex = windows.indexOf(this._selectedWindow);
+            delete this._selectedWindow;
+        }
 
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
@@ -320,10 +324,12 @@ AltTabPopup.prototype = {
                 this._select(backwardIndex);
                 this._appSwitcher._scrollTo(backwardIndex, 1, 0, true);
             } else {
-                this._select(forwardIndex);
-                // ensure that all the windows of the current workspace are in view
-                this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
-                this._appSwitcher._scrollTo(forwardIndex, -1, 2, true);
+                if (forwardIndex >= 0) {
+                    this._select(forwardIndex);
+                    // ensure that all the windows of the current workspace are in view
+                    this._appSwitcher._scrollTo(backwardIndex, 1, 3, true);
+                    this._appSwitcher._scrollTo(forwardIndex, -1, 2, true);
+                }
             }
         }
         // There's a race condition; if the user released Alt before
@@ -375,6 +381,7 @@ AltTabPopup.prototype = {
         }
         this._haveModal = true;
         this._modifierMask = primaryModifier(mask);
+        g_allWsMode = binding && binding.search(/group/) < 0;
         if (!this.refresh(binding, backward)) {
             this._finish();
             return false;
@@ -531,6 +538,15 @@ AltTabPopup.prototype = {
                 this._persistent = true;
             } else if (keysym == Clutter.z) {
                 this._toggleZoom();
+            } else if (keysym == Clutter.plus || keysym == Clutter.minus) {
+                let newMode = keysym == Clutter.plus;
+                if (g_allWsMode != newMode) {
+                    g_allWsMode = newMode;
+                    if (this._currentApp >= 0) {
+                        this._selectedWindow = this._appIcons[this._currentApp].window;
+                    }
+                    this.refresh();
+                }
             } else if (keysym == Clutter.h) { // toggle hide
                 if (this._hiding) {
                     this._hiding = false;
