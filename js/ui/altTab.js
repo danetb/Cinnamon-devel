@@ -51,6 +51,8 @@ const HELP_TEXT = [
     _("a: Activate selected window without closing Alt-Tab"),
     _("h: Hide Alt-Tab so you can see what's underneath (toggle)"),
     _("Ctrl+w: Close selected window. Use with care!"),
+    _("+ (Plus): Show windows from all workspaces"),
+    _("- (Minus): Show windows from current workspace only"),
     _("F1: Show this quick-help screen"),
     "",
 ];
