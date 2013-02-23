@@ -368,7 +368,7 @@ AltTabPopup.prototype = {
         let screen = global.screen;
         let display = screen.get_display();
 
-        this._showThumbnails = (this._thumbnailsEnabled && !this._iconsEnabled) || this._previewEnabled;
+        this._showThumbnails = (this._thumbnailsEnabled || this._previewEnabled);
 
         if (!Main.pushModal(this.actor)) {
             this.destroy();
