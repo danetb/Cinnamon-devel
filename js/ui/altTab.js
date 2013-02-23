@@ -312,7 +312,6 @@ AltTabPopup.prototype = {
         // if we are refreshing after already being shown, retain current selection, if possible
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
-            delete this._selectedWindow;
         }
 
         // Make the initial selection
@@ -542,9 +541,6 @@ AltTabPopup.prototype = {
                 let newMode = keysym == Clutter.plus;
                 if (g_allWsMode != newMode) {
                     g_allWsMode = newMode;
-                    if (this._currentApp >= 0) {
-                        this._selectedWindow = this._appIcons[this._currentApp].window;
-                    }
                     this.refresh();
                 }
             } else if (keysym == Clutter.h) { // toggle hide
@@ -816,6 +812,9 @@ AltTabPopup.prototype = {
         }
 
         this._currentApp = app;
+        if (this._currentApp >= 0) {
+            this._selectedWindow = this._appIcons[this._currentApp].window;
+        }
         if (this._appIcons.length < 1) {
             return;
         }
