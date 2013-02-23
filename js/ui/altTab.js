@@ -80,7 +80,7 @@ function AltTabPopup() {
     this._init();
 }
 
-var g_allWsMode;
+var g_allWsMode = false;
 var g_windowsToIgnore = [];
 
 AltTabPopup.prototype = {
@@ -380,7 +380,9 @@ AltTabPopup.prototype = {
         }
         this._haveModal = true;
         this._modifierMask = primaryModifier(mask);
-        g_allWsMode = binding && binding.search(/group/) < 0;
+        if (binding && binding.search(/group/) >= 0) {
+            g_allWsMode = false;
+        }
         if (!this.refresh(binding, backward)) {
             this._finish();
             return false;
