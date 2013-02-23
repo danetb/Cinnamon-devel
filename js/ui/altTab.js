@@ -144,6 +144,7 @@ AltTabPopup.prototype = {
         if (!found) {
             this._iconsEnabled = true;
         }
+        this._showThumbnails = (this._thumbnailsEnabled || this._previewEnabled);
     },
 
     _indexOfWindow: function(metaWindow) {
@@ -213,7 +214,7 @@ AltTabPopup.prototype = {
         // Allocate the thumbnails
         // We try to avoid overflowing the screen so we base the resulting size on
         // those calculations
-        if (this._thumbnails && this._appIcons.length > 0) {
+        if (this._thumbnails && this._currentApp >= 0) {
             let icon = this._appIcons[this._currentApp].actor;
             let [posX, posY] = icon.get_transformed_position();
             let thumbnailCenter = posX + icon.width / 2;
@@ -360,7 +361,7 @@ AltTabPopup.prototype = {
         if (this._appSwitcher) {
             this._appSwitcher.actor.destroy();
         }
-        this._appSwitcher = new AppSwitcher(windows, this._showThumbnails, this);
+        this._appSwitcher = new AppSwitcher(windows, this._showThumbnails, this._iconsEnabled, this);
         this.actor.add_actor(this._appSwitcher.actor);
         if (!this._iconsEnabled && !this._thumbnailsEnabled) {
             this._appSwitcher.actor.hide();
@@ -371,8 +372,6 @@ AltTabPopup.prototype = {
     show : function(backward, binding, mask) {
         let screen = global.screen;
         let display = screen.get_display();
-
-        this._showThumbnails = (this._thumbnailsEnabled || this._previewEnabled);
 
         if (!Main.pushModal(this.actor)) {
             this.destroy();
@@ -1192,14 +1191,15 @@ SwitcherList.prototype = {
 
 Signals.addSignalMethods(SwitcherList.prototype);
 
-function AppIcon(window, showThumbnail) {
-    this._init(window, showThumbnail);
+function AppIcon() {
+    this._init.apply(this, arguments);
 }
 
 AppIcon.prototype = {
-    _init: function(window, showThumbnail) {
+    _init: function(window, showThumbnail, showIcons) {
         this.window = window;
         this.showThumbnail = showThumbnail;
+        this.showIcons = showIcons;
         let tracker = Cinnamon.WindowTracker.get_default();
         this.app = tracker.get_window_app(window);
         this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
@@ -1251,7 +1251,7 @@ AppIcon.prototype = {
         if (this.icon) {this.icon.destroy();}
         // we only show thumbnails if there are more than one window belonging to the same "app",
         // otherwise the icon should be enough.
-        if (this.showThumbnail && this.app && this.app.get_windows().length > 1) {
+        if (!this.showIcons || (this.showThumbnail && this.app && this.app.get_windows().length > 1)) {
             this.icon = new St.Group();
             let clones = WindowUtils.createWindowClone(this.window, size, true, true);
             for (i in clones) {
@@ -1262,16 +1262,18 @@ AppIcon.prototype = {
                 //clone.actor.set_position(Math.round((size - width) / 2), Math.round((size - height) / 2));
                 clone.actor.set_position(clone.x, clone.y);
             }
-            let [width, height] = clones[0].actor.get_size();
-            clones[0].actor.set_position(Math.floor((size - width)/2), 0);
-            let isize = Math.max(Math.ceil(size*(!focused?3/4:7/8)), iconSizes[iconSizes.length - 1]);
-            let icon = this.app ?
-                this.app.create_icon_texture(isize) :
-                new St.Icon({ icon_name: 'application-default-icon',
-                              icon_type: St.IconType.FULLCOLOR,
-                              icon_size: isize });
-            this.icon.add_actor(icon);
-            icon.set_position(Math.floor((size - isize)/2), size - isize);
+            if (this.showIcons) {
+                let [width, height] = clones[0].actor.get_size();
+                clones[0].actor.set_position(Math.floor((size - width)/2), 0);
+                let isize = Math.max(Math.ceil(size*(!focused?3/4:7/8)), iconSizes[iconSizes.length - 1]);
+                let icon = this.app ?
+                    this.app.create_icon_texture(isize) :
+                    new St.Icon({ icon_name: 'application-default-icon',
+                                  icon_type: St.IconType.FULLCOLOR,
+                                  icon_size: isize });
+                this.icon.add_actor(icon);
+                icon.set_position(Math.floor((size - isize)/2), size - isize);
+            }
         }
         else {
             this.icon = this.app ?
@@ -1294,14 +1296,14 @@ function AppSwitcher() {
 AppSwitcher.prototype = {
     __proto__ : SwitcherList.prototype,
 
-    _init : function(windows, showThumbnails, altTabPopup) {
+    _init : function(windows, showThumbnails, showIcons, altTabPopup) {
         SwitcherList.prototype._init.call(this, false);
 
         // Construct the AppIcons, add to the popup
         let activeWorkspace = global.screen.get_active_workspace();
         let workspaceIcons = [];
         for (let i = 0; i < windows.length; i++) {
-            let appIcon = new AppIcon(windows[i], showThumbnails);
+            let appIcon = new AppIcon(windows[i], showThumbnails, showIcons);
             // Cache the window list now; we don't handle dynamic changes here,
             // and we don't want to be continually retrieving it
             appIcon.cachedWindows = [windows[i]];
