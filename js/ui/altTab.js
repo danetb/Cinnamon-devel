@@ -334,7 +334,6 @@ AltTabPopup.prototype = {
         if (!this._persistent) {
             let [x, y, mods] = global.get_pointer();
             if (!(mods & this._modifierMask)) {
-                this._finish();
                 return false;
             }
         }
@@ -377,6 +376,7 @@ AltTabPopup.prototype = {
         this._haveModal = true;
         this._modifierMask = primaryModifier(mask);
         if (!this.refresh(binding, backward)) {
+            this._finish();
             return false;
         }
         
