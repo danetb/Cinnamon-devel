@@ -103,7 +103,7 @@ AltTabPopup.prototype = {
         // Keeps track of the number of "primary" items, which is the number
         // of windows on the current workspace. This information is used to
         // size the icons to a size that fits the current working set.
-        var _numPrimaryItems = 0;
+        this._numPrimaryItems = 0;
 
         this.thumbnailsVisible = false;
 
@@ -302,7 +302,7 @@ AltTabPopup.prototype = {
         // added space for windows from the other workspaces, if any.
         this._numPrimaryItems_Orig = Math.max(2, wsWindows.length + (windows.length > wsWindows.length ? 2 : 0));
         this._numPrimaryItems = this._numPrimaryItems_Orig;
-
+        this._zoomedOut = false;
 
         this._createAppswitcher(windows);
         
@@ -405,19 +405,16 @@ AltTabPopup.prototype = {
     },
 
     _toggleZoom : function() {
-        if (this._zoomedOut) {
-            this._zoomedOut = false;
-            this._numPrimaryItems = this._numPrimaryItems_Orig;
-        }
-        else {
-            this._zoomedOut = true;
-            this._numPrimaryItems = this._appIcons.length - 1;
-        }
-        let current = this._currentApp; // save before re-creating the app switcher
-        let windows = this._appIcons.map(function(appIcon) {return appIcon.window;});
-        this._createAppswitcher(windows);
-        if (current >= 0) {
-            Mainloop.idle_add(Lang.bind(this, this._select, current)); // async refresh
+        this._zoomedOut = !this._zoomedOut;
+        let numItems = this._zoomedOut ? this._appIcons.length : this._numPrimaryItems_Orig;
+        if (numItems != this._numPrimaryItems) {
+            this._numPrimaryItems = numItems;
+            let current = this._currentApp; // save before re-creating the app switcher
+            let windows = this._appIcons.map(function(appIcon) {return appIcon.window;});
+            this._createAppswitcher(windows);
+            if (current >= 0) {
+                Mainloop.idle_add(Lang.bind(this, this._select, current)); // async refresh
+            }
         }
     },
 
