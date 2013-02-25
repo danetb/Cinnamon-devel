@@ -285,15 +285,6 @@ AltTabPopup.prototype = {
                 backwardWindow = windows[wlist.length > 1 ? currentIndex + wlist.length - 1 : currentIndex];
             }
         }
-        windows.sort(function(a, b) {
-            let wsDiff = a.get_workspace().index() - b.get_workspace().index();
-            if (wsDiff != 0) { return wsDiff; }
-            if (a == currentWindow) {return -1;}
-            if (a == forwardWindow) {return -1;}
-            let ignoredDiff = (g_windowsToIgnore.indexOf(a) >= 0 ? 1 : -1) - (g_windowsToIgnore.indexOf(b) >= 0 ? 1 : -1);
-            if (ignoredDiff != 0) { return ignoredDiff; }
-            return windows.indexOf(a) - windows.indexOf(b);
-        }, this);
 
         if (forwardWindow) {forwardIndex = windows.indexOf(forwardWindow)};
         if (backwardWindow) {backwardIndex = windows.indexOf(backwardWindow)};
@@ -559,6 +550,7 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.i && ctrlDown) {
                 if (this._currentApp >= 0) {
                     if (g_windowsToIgnore.indexOf(this._appIcons[this._currentApp].window) < 0) {
+                        this._appIcons[this._currentApp].ignored = true;
                         g_windowsToIgnore.push(this._appIcons[this._currentApp].window);
                     }
                 }
@@ -585,6 +577,7 @@ AltTabPopup.prototype = {
                     // If the window was ignored, unignore it
                     let ignoredIndex = g_windowsToIgnore.indexOf(window);
                     if (ignoredIndex >= 0) {
+                        this._appIcons[this._currentApp].ignored = false;
                         g_windowsToIgnore.splice(ignoredIndex, 1);
                     }
                 }
@@ -1197,6 +1190,7 @@ function AppIcon() {
 AppIcon.prototype = {
     _init: function(window, showThumbnail, showIcons) {
         this.window = window;
+        this.ignored = g_windowsToIgnore.indexOf(window) >= 0;
         this.showThumbnail = showThumbnail;
         this.showIcons = showIcons;
         let tracker = Cinnamon.WindowTracker.get_default();
@@ -1283,6 +1277,9 @@ AppIcon.prototype = {
         }
         // Make some room for the window title.
         this._label_bin.set_size(Math.floor(size * 1.2), Math.floor(size/2));
+        if (this.ignored) {
+            this.icon.opacity = 170;
+        }
         this._iconBin.child = this.icon;
         this._iconBin.set_size(size, size);
     }
