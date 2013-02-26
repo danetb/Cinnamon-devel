@@ -346,7 +346,7 @@ AltTabPopup.prototype = {
         if (this._appIcons.length > 0) {
             // We delay showing the popup so that fast Alt+Tab users aren't
             // disturbed by the popup briefly flashing.
-            this._initialDelayTimeoutId = Mainloop.timeout_add(POPUP_DELAY_TIMEOUT,
+            this._initialDelayTimeoutId = Mainloop.timeout_add(this._selectedWindow ? 0 : POPUP_DELAY_TIMEOUT,
                 Lang.bind(this, function () {
                     this._appSwitcher.actor.opacity = 255;
                     this._initialDelayTimeoutId = 0;
