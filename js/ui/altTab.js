@@ -112,6 +112,7 @@ AltTabPopup.prototype = {
         this._disableHover();
 
         this._connector = new Connector.Connector();
+        this._connector.tie(this.actor);
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
             let workspace = global.screen.get_workspace_by_index(i);
                 this._connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
@@ -696,7 +697,6 @@ AltTabPopup.prototype = {
     _onDestroy : function() {
         this._popModal();
 
-        this._connector.destroy();
         if (this._motionTimeoutId)
             Mainloop.source_remove(this._motionTimeoutId);
         if (this._thumbnailTimeoutId)
