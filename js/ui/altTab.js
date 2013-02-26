@@ -122,6 +122,11 @@ AltTabPopup.prototype = {
         this._connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
         this._connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
 
+        // remove zombies
+        g_windowsToIgnore = g_windowsToIgnore.filter(function(window) {
+            return window.get_workspace() != null;
+        });
+
         Main.uiGroup.add_actor(this.actor);
 
         this._previewEnabled = false;
