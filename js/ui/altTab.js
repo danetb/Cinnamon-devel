@@ -1472,24 +1472,12 @@ ThumbnailList.prototype = {
     _init : function(windows) {
         SwitcherList.prototype._init.call(this);
 
-        let activeWorkspace = global.screen.get_active_workspace();
-
-        // We fake the value of 'separatorAdded' when the app has no window
-        // on the current workspace, to avoid displaying a useless separator in
-        // that case.
-        let separatorAdded = windows.length == 0 || windows[0].get_workspace() != activeWorkspace;
-
         this._labels = new Array();
         this._thumbnailBins = new Array();
         this._clones = new Array();
         this._windows = windows;
 
         for (let i = 0; i < windows.length; i++) {
-            if (!separatorAdded && windows[i].get_workspace() != activeWorkspace) {
-              this.addSeparator();
-              separatorAdded = true;
-            }
-
             let box = new St.BoxLayout({ style_class: 'thumbnail-box',
                                          vertical: true });
 
