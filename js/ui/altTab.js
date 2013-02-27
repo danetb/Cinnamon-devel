@@ -1485,41 +1485,27 @@ ThumbnailList.prototype = {
 
             box.add_actor(bin);
             this._thumbnailBins.push(bin);
-
-            let title = windows[i].get_title();
-            if (title) {
-                let name = new St.Label({ text: title });
-                // St.Label doesn't support text-align so use a Bin
-                let bin = new St.Bin({ x_align: St.Align.MIDDLE });
-                this._labels.push(bin);
-                bin.add_actor(name);
-                box.add_actor(bin);
-
-                this.addItem(box, name);
-            } else {
-                this.addItem(box, null);
-            }
-
+            this.addItem(box, null);
         }
     },
 
     addClones : function (availHeight) {
         if (!this._thumbnailBins.length)
             return;
-        let totalPadding = this._items[0].get_theme_node().get_horizontal_padding() + this._items[0].get_theme_node().get_vertical_padding();
-        totalPadding += this.actor.get_theme_node().get_horizontal_padding() + this.actor.get_theme_node().get_vertical_padding();
+        let totalPadding = this._items[0].get_theme_node().get_vertical_padding();
+        totalPadding += this.actor.get_theme_node().get_vertical_padding();
         let [labelMinHeight, labelNaturalHeight] = this._labels.length > 0 ?
             this._labels[0].get_preferred_height(-1) : [0, 0];
         let spacing = this._items[0].child.get_theme_node().get_length('spacing');
 
         availHeight = Math.min(availHeight - labelNaturalHeight - totalPadding - spacing, THUMBNAIL_DEFAULT_SIZE);
-        let binHeight = availHeight + this._items[0].get_theme_node().get_vertical_padding() + this.actor.get_theme_node().get_vertical_padding() - spacing;
+        let binHeight = availHeight - spacing;
         binHeight = Math.min(THUMBNAIL_DEFAULT_SIZE, binHeight);
 
         for (let i = 0; i < this._thumbnailBins.length; i++) {
             let metaWindow = this._windows[i];
             let container = new St.Group();
-            let clones = WindowUtils.createWindowClone(metaWindow, availHeight, true, true);
+            let clones = WindowUtils.createWindowClone(metaWindow, binHeight, true, true);
             for (let j = 0; j < clones.length; j++) {
               let clone = clones[j];
               container.add_actor(clone.actor);
