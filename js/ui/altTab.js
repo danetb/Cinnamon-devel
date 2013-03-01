@@ -1245,7 +1245,13 @@ AppIcon.prototype = {
         this.label.set_text(title.length && this.window.minimized ? "[" + title + "]" : title);
     },
 
-    set_size: function(size, focused) {
+    calculateSlotSize: function(sizeIn) {
+        // Icons are sized smaller if they don't belong to the active workspace
+        return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
+    },
+
+    set_size: function(sizeIn, focused) {
+        let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
         // we only show thumbnails if there are more than one window belonging to the same "app",
         // otherwise the icon should be enough.
@@ -1336,12 +1342,8 @@ AppSwitcher.prototype = {
         }
         let modelIndex = 0;
         for (let i = 0; i <  this._items.length && this._items.length > 1; ++i) {
-            // We don't want the model index to be the currently selected index,
-            // or the previous index, since that may lead to differing sizes on
-            // scrolling through the set.
-            let ii = (this._curApp + 2 + i + this._items.length) % this._items.length;
-            if (this._items[ii].style_class == 'item-box') {
-                modelIndex = ii;
+            if (this._items[i].style_class == 'item-box') {
+                modelIndex = i;
                 break;
             }
         }
@@ -1361,12 +1363,22 @@ AppSwitcher.prototype = {
         let height = 0;
 
         for(let i =  0; i < iconSizes.length; i++) {
-                this._iconSize = iconSizes[i];
-                height = iconSizes[i] + iconSpacing;
-                let w = height * this._altTabPopup._numPrimaryItems + totalSpacing;
-                if (w <= availWidth)
-                        break;
-        }
+            this._iconSize = iconSizes[i];
+            height = this._iconSize + iconSpacing;
+            let w = 0;
+            if (!this._altTabPopup._zoomedOut) {
+                w = height * this._altTabPopup._numPrimaryItems + totalSpacing;
+            }
+            else {
+                w = totalSpacing;
+                for(let ii = 0; ii < this.icons.length; ii++) {
+                    w += this.icons[ii].calculateSlotSize(this._iconSize) + iconSpacing;
+                }
+            }
+            if (w <= availWidth) {
+                    break;
+            }
+        }   
 
         if (this._items.length == 1) {
             this._iconSize = iconSizes[0];
