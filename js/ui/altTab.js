@@ -177,6 +177,9 @@ AltTabPopup.prototype = {
                 this._clearPreview();
                 this._destroyThumbnails();
             }
+            if (metaWindow == this._homeWindow) {
+                this._homeWindow = null;
+            }
             this._appSwitcher._removeIcon(index);
             this._select(this._currentApp);
         }
@@ -308,6 +311,10 @@ AltTabPopup.prototype = {
         this.actor.show();
         this.actor.get_allocation_box();
         
+        if (!this._homeWindow) {
+            this._homeWindow = currentWindow;
+        }
+
         // if we are refreshing after already being shown, retain current selection, if possible
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
@@ -479,7 +486,7 @@ AltTabPopup.prototype = {
             } else if (keysym == Clutter.ISO_Left_Tab) {
                 this._select(this._previousApp());
             } else if (keysym == Clutter.Home || keysym == Clutter.KP_Home) {
-                this._select(0);
+                this._select(ctrlDown && this._homeWindow ? this._indexOfWindow(this._homeWindow) : 0);
             } else if (keysym == Clutter.End || keysym == Clutter.KP_End) {
                 this._select(this._appIcons.length - 1);
             } else if (keysym == Clutter.Page_Down || keysym == Clutter.KP_Page_Down) {
