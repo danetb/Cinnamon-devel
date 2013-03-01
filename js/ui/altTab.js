@@ -1153,14 +1153,15 @@ SwitcherList.prototype = {
         for (let i = 0; i < children.length; i++) {
             if (this._items.indexOf(children[i]) != -1) {
                 let [childMin, childNat] = children[i].get_preferred_height(childWidth);
-                let vSpacing = (childHeight - childNat) / 2;
+                let [width, height] = children[i].get_size();
+                let vSpacing = Math.floor((childHeight - childNat) / 2);
                 childBox.x1 = x;
                 childBox.y1 = vSpacing;
-                childBox.x2 = x + childWidth;
-                childBox.y2 = childBox.y1 + childNat;
+                childBox.x2 = x + width;
+                childBox.y2 = childBox.y1 + height;
                 children[i].allocate(childBox, flags);
 
-                x += this._list.spacing + childWidth;
+                x += this._list.spacing + width;
             } else if (this._separators.indexOf(children[i]) != -1) {
                 // We want the separator to be more compact than the rest.
                 childBox.x1 = x;
