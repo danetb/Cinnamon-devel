@@ -16,6 +16,7 @@ Tooltip.prototype = {
         if (initTitle) this._tooltip.set_text(initTitle);
         Main.uiGroup.add_actor(this._tooltip);
 
+        item.connect('destroy', Lang.bind(this, this.destroy));
         item.connect('enter-event', Lang.bind(this, this._onEnterEvent));
         item.connect('leave-event', Lang.bind(this, this._onLeaveEvent));
         item.connect('motion-event', Lang.bind(this, this._onMotionEvent));
@@ -99,9 +100,11 @@ Tooltip.prototype = {
     },
 
     destroy: function() {
-        Tweener.removeTweens(this);
-        this._tooltip.destroy();
-        this._tooltip = null;
+        if (this._tooltip) {
+            Tweener.removeTweens(this);
+            this._tooltip.destroy();
+            this._tooltip = null;
+        }
     }
 };
 
