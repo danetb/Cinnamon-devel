@@ -348,6 +348,10 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 }
                 return true;
             }
+            if (symbol === Clutter.ISO_Left_Tab) {
+                // If we don't handle this in some way, key focus strays into nowhere
+                return true;
+            }
             if (symbol == Clutter.Left || symbol == Clutter.Right || symbol == Clutter.Home || symbol == Clutter.End) {
                 let entering = !this.inLaunchers;
                 if (this.inLaunchers || !o.get_text().length) {
