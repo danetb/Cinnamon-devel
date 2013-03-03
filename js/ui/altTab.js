@@ -1418,7 +1418,7 @@ AppSwitcher.prototype = {
             let itemBox = this._items[i].allocation;
             childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
             childBox.x2 = childBox.x1 + arrowWidth;
-            childBox.y1 = actor.allocation.y2 + arrowHeight;
+            childBox.y1 = itemBox.y2 + arrowHeight;
             childBox.y2 = childBox.y1 + arrowHeight;
             this._arrows[i].allocate(childBox, flags);
         }
@@ -1473,7 +1473,9 @@ AppSwitcher.prototype = {
         let n = this._arrows.length;
         let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
         arrow.connect('repaint', Lang.bind(this, function() {
-            _drawArrow(arrow, this._altTabPopup._thumbnailsEnabled ? St.Side.BOTTOM : St.Side.TOP);
+            if (this._altTabPopup._thumbnailsEnabled) {
+                _drawArrow(arrow, St.Side.BOTTOM);
+            }
         }));
         this._list.add_actor(arrow);
         this._arrows.push(arrow);
