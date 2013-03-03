@@ -16,6 +16,7 @@ const Main = imports.ui.main;
 const Overview = imports.ui.overview;
 const PopupMenu = imports.ui.popupMenu;
 const Tweener = imports.ui.tweener;
+const Connector = imports.misc.connector;
 const PointerTracker = imports.misc.pointerTracker;
 const GridNavigator = imports.misc.gridNavigator;
 const WindowUtils = imports.misc.windowUtils;
@@ -140,21 +141,15 @@ WindowClone.prototype = {
 
         this._stackAbove = null;
 
-        let sizeChangedId = this.realWindow.connect('size-changed',
+        let connector = new Connector.Connector();
+        // whichever actor is destroyed first cleans up all important connections
+        connector.tie(this.actor); connector.tie(this.realWindow);
+
+        connector.addConnection(this.realWindow, 'size-changed',
             Lang.bind(this, this._onRealWindowSizeChanged));
-        let workspaceChangedId = this.metaWindow.connect('workspace-changed', Lang.bind(this, function(w, oldws) {
+        connector.addConnection(this.metaWindow, 'workspace-changed', Lang.bind(this, function(w, oldws) {
             this.emit('workspace-changed', oldws);
         }));
-        let realWindowDestroyId = 0;
-        this._disconnectWindowSignals = function() {
-            this._disconnectWindowSignals = function() {};            
-            this.metaWindow.disconnect(workspaceChangedId);
-            this.realWindow.disconnect(sizeChangedId);
-            this.realWindow.disconnect(realWindowDestroyId);
-        };
-        realWindowDestroyId = this.realWindow.connect('destroy',
-            Lang.bind(this, this._disconnectWindowSignals));
-
 
         this.myContainer.connect('selection-changed', Lang.bind(this, this._zoomEnd));
 
@@ -243,8 +238,6 @@ WindowClone.prototype = {
     },
 
     _onDestroy: function() {
-        this._disconnectWindowSignals();
-
         this.metaWindow._delegate = null;
         this.actor._delegate = null;
         if (this._zoomLightbox)
@@ -438,11 +431,10 @@ WindowOverlay.prototype = {
         button.connect('clicked', Lang.bind(this, this.closeWindow));
 
         this.refreshTitle(metaWindow.title);
-        this._updateCaptionId = metaWindow.connect('notify::title',
+        Connector.connect(metaWindow, 'notify::title',
             Lang.bind(this, function(w) {
                 this.refreshTitle(w.title);
-            }));
-
+            })).tie(parentActor);
         this._pointerTracker = new PointerTracker.PointerTracker();
         windowClone.actor.connect('motion-event', Lang.bind(this, this._onPointerMotion));
         windowClone.actor.connect('leave-event', Lang.bind(this, this._onPointerLeave));
@@ -452,12 +444,8 @@ WindowOverlay.prototype = {
         windowClone.connect('zoom-start', Lang.bind(this, this.hide));
         windowClone.connect('zoom-end', Lang.bind(this, this.show));
 
-        let attentionId = global.display.connect('window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
-        let urgentId = global.display.connect('window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
-        this.disconnectAttentionSignals = function() {
-            global.display.disconnect(attentionId);
-            global.display.disconnect(urgentId);
-        };
+        Connector.connect(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention)).tie(parentActor);
+        Connector.connect(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention)).tie(parentActor);
 
         // force a style change if we are already on a stage - otherwise
         // the signal will be emitted normally when we are added
@@ -600,9 +588,8 @@ WindowOverlay.prototype = {
         let metaWindow = this._windowClone.metaWindow;
         let workspace = metaWindow.get_workspace();
 
-        if (this._disconnectWindowAdded) {this._disconnectWindowAdded();}
-        let windowAddedId = workspace.connect('window-added',Lang.bind(this, function(ws, win){
-            if (this._disconnectWindowAdded) {this._disconnectWindowAdded();}
+        let addedConnection = Connector.connect(workspace, 'window-added',Lang.bind(this, function(ws, win){
+            addedConnection.disconnect();
             if (win.get_transient_for() == metaWindow) {
 
                 // use an idle handler to avoid mapping problems -
@@ -614,23 +601,16 @@ WindowOverlay.prototype = {
                                             }));
             }
         }));
-
-        this._disconnectWindowAdded = Lang.bind(this, function() {
-            workspace.disconnect(windowAddedId);
-            this._disconnectWindowAdded = 0;
-        });
+        addedConnection.tie(this._windowClone.actor);
 
         metaWindow.delete(global.get_current_time());
     },
 
     _onDestroy: function() {
-        if (this._disconnectWindowAdded) {this._disconnectWindowAdded();}
         if (this._idleToggleCloseId > 0) {
             Mainloop.source_remove(this._idleToggleCloseId);
             this._idleToggleCloseId = 0;
         }
-        this.disconnectAttentionSignals();
-        this._windowClone.metaWindow.disconnect(this._updateCaptionId);
         this.title.destroy();
         this.closeButton.destroy();this._applicationIconBox.destroy();
         
@@ -736,9 +716,9 @@ WorkspaceMonitor.prototype = {
         this.actor.add_actor(this._windowOverlaysGroup);
 
         this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
-        Main.overview.connect('overview-background-button-press', function() {
+        Connector.connect(Main.overview, 'overview-background-button-press', function() {
             closeContextMenu();
-        });
+        }).tie(this.actor);
 
         this.stickyCallbackId = workspace.myView.connect('sticky-detected', Lang.bind(this, function(box, metaWindow) {
             this._doAddWindow(metaWindow);
@@ -756,15 +736,15 @@ WorkspaceMonitor.prototype = {
 
         // Track window changes
         if (this.metaWorkspace) {
-            this._windowAddedId = this.metaWorkspace.connect('window-added',
-                                                             Lang.bind(this, this._windowAdded));
-            this._windowRemovedId = this.metaWorkspace.connect('window-removed',
-                                                               Lang.bind(this, this._windowRemoved));
+            Connector.connect(this.metaWorkspace, 'window-added',
+                Lang.bind(this, this._windowAdded)).tie(this.actor);
+            Connector.connect(this.metaWorkspace, 'window-removed',
+                Lang.bind(this, this._windowRemoved)).tie(this.actor);
         }
-        this._windowEnteredMonitorId = global.screen.connect('window-entered-monitor',
-            Lang.bind(this, this._windowEnteredMonitor));
-        this._windowLeftMonitorId = global.screen.connect('window-left-monitor',
-            Lang.bind(this, this._windowLeftMonitor));
+        Connector.connect(global.screen, 'window-entered-monitor',
+            Lang.bind(this, this._windowEnteredMonitor)).tie(this.actor);
+        Connector.connect(global.screen, 'window-left-monitor',
+            Lang.bind(this, this._windowLeftMonitor)).tie(this.actor);
         this._repositionWindowsId = 0;
 
         this.leavingOverview = false;
@@ -1268,8 +1248,7 @@ WorkspaceMonitor.prototype = {
             Mainloop.source_remove(this._repositionWindowsId);
             this._repositionWindowsId = 0;
         }
-        this._overviewHiddenId = Main.overview.connect('hidden', Lang.bind(this,
-                                                                           this._doneLeavingOverview));
+        Connector.connect(Main.overview, 'hidden', Lang.bind(this, this._doneLeavingOverview)).tie(this.actor);
 
         if (this.metaWorkspace != null && this.metaWorkspace != currentWorkspace)
             return;
@@ -1310,20 +1289,9 @@ WorkspaceMonitor.prototype = {
 
     _onDestroy: function(actor) {
         closeContextMenu();
-        if (this._overviewHiddenId) {
-            Main.overview.disconnect(this._overviewHiddenId);
-            this._overviewHiddenId = 0;
-        }
         Tweener.removeTweens(actor);
 
         this._myWorkspace.myView.disconnect(this.stickyCallbackId);
-        if (this.metaWorkspace) {
-            this.metaWorkspace.disconnect(this._windowAddedId);
-            this.metaWorkspace.disconnect(this._windowRemovedId);
-        }
-        global.screen.disconnect(this._windowEnteredMonitorId);
-        global.screen.disconnect(this._windowLeftMonitorId);
-
         if (this._repositionWindowsId > 0)
             Mainloop.source_remove(this._repositionWindowsId);
 
