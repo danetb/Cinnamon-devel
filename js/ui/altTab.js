@@ -1095,8 +1095,6 @@ SwitcherList.prototype = {
     },
 
     _getPreferredWidth: function (actor, forHeight, alloc) {
-        let [maxChildMin, maxChildNat] = this._maxChildWidth(forHeight);
-
         let separatorWidth = 0;
         if (this._separators.length) {
             let [sepMin, sepNat] = this._separators[0].get_preferred_width(forHeight);
@@ -1104,7 +1102,12 @@ SwitcherList.prototype = {
         }
 
         let totalSpacing = this._list.spacing * Math.max(1, (this._items.length - 1));
-        alloc.min_size = this._items.length * maxChildMin + separatorWidth + totalSpacing;
+        let accItemWidth = 0;
+        for (let i = 0; i < this._items.length; i++) {
+            let [childMin, childNat] = this._items[i].get_preferred_width(forHeight);
+            accItemWidth += childMin;
+        }
+        alloc.min_size = accItemWidth + separatorWidth + totalSpacing;
         alloc.natural_size = alloc.min_size;
         this._minSize = alloc.min_size;
     },
