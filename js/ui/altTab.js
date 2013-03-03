@@ -1211,7 +1211,7 @@ AppIcon.prototype = {
         let tracker = Cinnamon.WindowTracker.get_default();
         this.app = tracker.get_window_app(window);
         this.actor = new St.BoxLayout({ style_class: 'alt-tab-app',
-                                         vertical: true });
+                                         vertical: true, y_align: St.Align.START });
         this.actor.connect('destroy', Lang.bind(this, function() {
             if (this._urgencyTimeout) {
                 Mainloop.source_remove(this._urgencyTimeout);
@@ -1220,11 +1220,11 @@ AppIcon.prototype = {
         this.icon = null;
         this._iconBin = new St.Bin();
 
-        this.actor.add(this._iconBin, { x_fill: false, y_fill: false } );
+        this.actor.add(this._iconBin, { x_fill: false, y_fill: false, y_align: St.Align.END } );
         this.label = new St.Label();
         this.label.clutter_text.line_wrap = true;
         this.updateLabel();
-        this._label_bin = new St.Bin({ x_align: St.Align.MIDDLE });
+        this._label_bin = new St.Bin({ x_align: St.Align.MIDDLE, y_align: St.Align.START });
         this._label_bin.add_actor(this.label);
         this.actor.add(this._label_bin);
     },
