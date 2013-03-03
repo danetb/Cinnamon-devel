@@ -1412,13 +1412,19 @@ AppSwitcher.prototype = {
         let arrowHeight = Math.floor(this.actor.get_theme_node().get_padding(St.Side.BOTTOM) / 3);
         let arrowWidth = arrowHeight * 2;
 
+        // First, find the tallest item in the list
+        let height = 0;
+        for (let i = 0; i < this._items.length; i++) {
+            let itemBox = this._items[i].allocation;
+            height = Math.max(height, itemBox.y2);
+        }
         // Now allocate each arrow underneath its item
         let childBox = new Clutter.ActorBox();
         for (let i = 0; i < this._items.length; i++) {
             let itemBox = this._items[i].allocation;
             childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
             childBox.x2 = childBox.x1 + arrowWidth;
-            childBox.y1 = itemBox.y2 + arrowHeight;
+            childBox.y1 = height + arrowHeight;
             childBox.y2 = childBox.y1 + arrowHeight;
             this._arrows[i].allocate(childBox, flags);
         }
