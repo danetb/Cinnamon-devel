@@ -78,12 +78,12 @@ function primaryModifier(mask) {
     return primary;
 }
 
+var g_allWsMode = false;
+var g_windowsToIgnore = [];
+
 function AltTabPopup() {
     this._init();
 }
-
-var g_allWsMode = false;
-var g_windowsToIgnore = [];
 
 AltTabPopup.prototype = {
     _init : function() {
@@ -111,16 +111,16 @@ AltTabPopup.prototype = {
         // the switcher appears underneath the current pointer location
         this._disableHover();
 
-        this._connector = new Connector.Connector();
-        this._connector.tie(this.actor);
+        let connector = new Connector.Connector();
+        connector.tie(this.actor);
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
             let workspace = global.screen.get_workspace_by_index(i);
-                this._connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
+                connector.addConnection(workspace, 'window-removed', Lang.bind(this, function(ws, metaWindow) {
                     this._removeWindow(metaWindow);
                 }));
         }
-        this._connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
-        this._connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
+        connector.addConnection(global.display, 'window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention));
+        connector.addConnection(global.display, 'window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention));
 
         // remove zombies
         g_windowsToIgnore = g_windowsToIgnore.filter(function(window) {
@@ -277,7 +277,7 @@ AltTabPopup.prototype = {
         let activeWsIndex = global.screen.get_active_workspace_index();
         for (let [i, numws] = [0, global.screen.n_workspaces]; i < numws; ++i) {
             let wlist = Main.getTabList(global.screen.get_workspace_by_index(i));
-            if (wlist.length && i != activeWsIndex) {
+            if (i != activeWsIndex) {
                 wlist = wlist.filter(function(window) {
                     // We don't want duplicates. Ignored windows from other workspaces are not welcome.
                     return !window.is_on_all_workspaces() && g_windowsToIgnore.indexOf(window) < 0;
@@ -286,7 +286,7 @@ AltTabPopup.prototype = {
             if (g_allWsMode || i == activeWsIndex) {
                 windows = windows.concat(wlist);
             }
-            if (i == activeWsIndex && wlist.length) {
+            if (i == activeWsIndex) {
                 currentIndex = windows.indexOf(currentWindow);
                 // Quick alt-tabbing (with no use of the switcher) should only
                 // select between the windows of the active workspace.
@@ -375,9 +375,6 @@ AltTabPopup.prototype = {
     },
     
     show : function(backward, binding, mask) {
-        let screen = global.screen;
-        let display = screen.get_display();
-
         if (!Main.pushModal(this.actor)) {
             this.destroy();
             return false;
