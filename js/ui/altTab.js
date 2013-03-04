@@ -48,7 +48,6 @@ const HELP_TEXT = [
     _("Ctrl+Space: Enter \"persistent mode\", in which Alt-Tab will remain open until actively closed"),
     _("m: Move selected window to next monitor"),
     _("n: Minimize selected window"),
-    _("a: Activate selected window without closing Alt-Tab"),
     _("h: Hide Alt-Tab so you can see what's underneath (toggle)"),
     _("Ctrl+w: Close selected window. Use with care!"),
     _("+ (Plus): Show windows from all workspaces"),
@@ -581,19 +580,6 @@ AltTabPopup.prototype = {
                     let window = this._appIcons[this._currentApp].window;
                     (window.minimized ? window.unminimize : window.minimize).call(window, global.get_current_time());
                     this._select(this._currentApp); // refresh
-                }
-            } else if (keysym == Clutter.a && !ctrlDown) {
-                if (this._currentApp >= 0) {
-                    let window = this._appIcons[this._currentApp].window;
-                    Main.activateWindow(window);
-                    this._select(this._currentApp); // refresh
-                    this._appSwitcher._indicateItem(this._currentApp);
-                    // If the window was ignored, unignore it
-                    let ignoredIndex = g_windowsToIgnore.indexOf(window);
-                    if (ignoredIndex >= 0) {
-                        this._appIcons[this._currentApp].ignored = false;
-                        g_windowsToIgnore.splice(ignoredIndex, 1);
-                    }
                 }
             }
             return true;
