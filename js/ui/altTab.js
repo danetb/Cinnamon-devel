@@ -1427,7 +1427,7 @@ AppSwitcher.prototype = {
         let itemBox = this._items[index].allocation;
         childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
         childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y1 = height + (direction == St.Side.TOP ? -arrowHeight : arrowHeight);
+        childBox.y1 = height - arrowHeight * 2;
         childBox.y2 = childBox.y1 + arrowHeight;
         arrow.allocate(childBox, 0);
     },
