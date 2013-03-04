@@ -319,6 +319,7 @@ AltTabPopup.prototype = {
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
+        this._appSwitcher._indicateItem(currentIndex);
 
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
@@ -586,6 +587,7 @@ AltTabPopup.prototype = {
                     let window = this._appIcons[this._currentApp].window;
                     Main.activateWindow(window);
                     this._select(this._currentApp); // refresh
+                    this._appSwitcher._indicateItem(this._currentApp);
                     // If the window was ignored, unignore it
                     let ignoredIndex = g_windowsToIgnore.indexOf(window);
                     if (ignoredIndex >= 0) {
@@ -1405,12 +1407,42 @@ AppSwitcher.prototype = {
         alloc.natural_size = height;
     },
 
+    _getArrowDimensions: function() {
+        let arrowHeight = Math.floor(this.actor.get_theme_node().get_padding(St.Side.BOTTOM) / 3);
+        let arrowWidth = arrowHeight * 2;
+        return [arrowWidth, arrowHeight];
+    },
+
+    _indicateItem: function(index) {
+        if (this._indicationArrow) {
+            this._indicationArrow.destroy();
+            this._indicationArrow = 0;
+        }
+        if (index < 0) {
+            return;
+        }
+
+        let arrow = this._indicationArrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
+        arrow.connect('repaint', Lang.bind(this, function() {
+            _drawArrow(arrow, St.Side.TOP);
+        }));
+        this._list.add_actor(arrow);
+
+        let childBox = new Clutter.ActorBox();
+        let [arrowWidth, arrowHeight] = this._getArrowDimensions();
+        let itemBox = this._items[index].allocation;
+        childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
+        childBox.x2 = childBox.x1 + arrowWidth;
+        childBox.y1 = itemBox.y2 - arrowHeight;
+        childBox.y2 = childBox.y1 + arrowHeight;
+        arrow.allocate(childBox, 0);
+    },
+
     _allocate: function (actor, box, flags) {
         // Allocate the main list items
         SwitcherList.prototype._allocate.call(this, actor, box, flags);
 
-        let arrowHeight = Math.floor(this.actor.get_theme_node().get_padding(St.Side.BOTTOM) / 3);
-        let arrowWidth = arrowHeight * 2;
+        let [arrowWidth, arrowHeight] = this._getArrowDimensions();
 
         // First, find the tallest item in the list
         let height = 0;
