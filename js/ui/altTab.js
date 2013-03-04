@@ -1339,13 +1339,10 @@ AppSwitcher.prototype = {
             alloc.min_size = alloc.natural_size = 32;
             return;
         }
-        let modelIndex = 0;
-        for (let i = 0; i <  this._items.length && this._items.length > 1; ++i) {
-            if (this._items[i].style_class == 'item-box') {
-                modelIndex = i;
-                break;
-            }
-        }
+        // using the current index may lead to sligthly varying heights when scrolling
+        // using the current index + 1 leads to jumping when scrolling backwards
+        let modelIndex = (this._curApp + this._items.length + 2) % this._items.length;
+
         let themeNode = this._items[modelIndex].get_theme_node();
         let iconPadding = themeNode.get_horizontal_padding();
         let iconBorder = themeNode.get_border_width(St.Side.LEFT) + themeNode.get_border_width(St.Side.RIGHT);
