@@ -318,7 +318,7 @@ AltTabPopup.prototype = {
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
-        this._appSwitcher._indicateItem(currentIndex);
+        this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
 
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
@@ -815,6 +815,7 @@ AltTabPopup.prototype = {
         this._appSwitcher.highlight(app, false);
         this._doWindowPreview();
         if (this._thumbnailsEnabled && this._iconsEnabled) {
+            this._appSwitcher._indicateItem(-1, "_currentThumbnail");
             if (this._thumbnailTimeoutId) {
                 Mainloop.source_remove(this._thumbnailTimeoutId);
             }
@@ -823,6 +824,7 @@ AltTabPopup.prototype = {
                     if (!this._thumbnails)
                         this._createThumbnails();
                     this._thumbnails.highlight(0, false);
+                    this._appSwitcher._indicateItem(app, "_currentThumbnail", St.Side.BOTTOM);
             }));
         }
     },
@@ -1316,7 +1318,6 @@ AppSwitcher.prototype = {
         }
 
         this.icons = [];
-        this._arrows = [];
         let lastWsIndex = 0;
         workspaceIcons.forEach(function(icon) {
             let wsIndex = icon.window.get_workspace().index();
@@ -1399,60 +1400,39 @@ AppSwitcher.prototype = {
         return [arrowWidth, arrowHeight];
     },
 
-    _indicateItem: function(index) {
-        if (this._indicationArrow) {
-            this._indicationArrow.destroy();
-            this._indicationArrow = 0;
+    _indicateItem: function(index, id, direction) {
+        if (this[id]) {
+            this[id].destroy();
+            this[id] = 0;
         }
         if (index < 0) {
             return;
         }
 
-        let arrow = this._indicationArrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
+        let arrow = this[id] = new St.DrawingArea({ style_class: 'switcher-arrow' });
         arrow.connect('repaint', Lang.bind(this, function() {
-            _drawArrow(arrow, St.Side.TOP);
+            _drawArrow(arrow, direction);
         }));
         this._list.add_actor(arrow);
+
+        // First, find the tallest item in the list
+        let height = 0;
+        for (let i = 0; i < this._items.length; i++) {
+            height = Math.max(height, this._items[i].allocation.y2);
+        }
 
         let childBox = new Clutter.ActorBox();
         let [arrowWidth, arrowHeight] = this._getArrowDimensions();
         let itemBox = this._items[index].allocation;
         childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
         childBox.x2 = childBox.x1 + arrowWidth;
-        childBox.y1 = itemBox.y2 - arrowHeight;
+        childBox.y1 = height + (direction == St.Side.TOP ? -arrowHeight : arrowHeight);
         childBox.y2 = childBox.y1 + arrowHeight;
         arrow.allocate(childBox, 0);
     },
 
-    _allocate: function (actor, box, flags) {
-        // Allocate the main list items
-        SwitcherList.prototype._allocate.call(this, actor, box, flags);
-
-        let [arrowWidth, arrowHeight] = this._getArrowDimensions();
-
-        // First, find the tallest item in the list
-        let height = 0;
-        for (let i = 0; i < this._items.length; i++) {
-            let itemBox = this._items[i].allocation;
-            height = Math.max(height, itemBox.y2);
-        }
-        // Now allocate each arrow underneath its item
-        let childBox = new Clutter.ActorBox();
-        for (let i = 0; i < this._items.length; i++) {
-            let itemBox = this._items[i].allocation;
-            childBox.x1 = Math.floor(itemBox.x1 + (itemBox.x2 - itemBox.x1 - arrowWidth) / 2);
-            childBox.x2 = childBox.x1 + arrowWidth;
-            childBox.y1 = height + arrowHeight;
-            childBox.y2 = childBox.y1 + arrowHeight;
-            this._arrows[i].allocate(childBox, flags);
-        }
-    },
-
-    // We override SwitcherList's highlight() method to also deal with
-    // the AppSwitcher->ThumbnailList arrows.
     highlight : function(n, justOutline) {
         if (this._prevApp != -1) {
-            this._arrows[this._prevApp].hide();
             this.icons[this._prevApp].set_size(this._iconSize);
         }
 
@@ -1461,7 +1441,6 @@ AppSwitcher.prototype = {
  
         if (this._curApp != -1 && this._altTabPopup._iconsEnabled) {
             this.icons[this._curApp].set_size(this._iconSize, true);
-            this._arrows[this._curApp].show();
         }
     },
 
@@ -1470,8 +1449,6 @@ AppSwitcher.prototype = {
         this.icons.splice(index, 1);
         this._items[index].destroy();
         this._items.splice(index, 1);
-        this._arrows[index].destroy();
-        this._arrows.splice(index, 1);
         if (index < this._prevApp) {
             this._prevApp = this._prevApp - 1;
         }
@@ -1493,20 +1470,6 @@ AppSwitcher.prototype = {
         this.icons.push(appIcon);
         this.addItem(appIcon.actor, appIcon.label);
         appIcon._checkAttention();
-
-        let n = this._arrows.length;
-        let arrow = new St.DrawingArea({ style_class: 'switcher-arrow' });
-        arrow.connect('repaint', Lang.bind(this, function() {
-            if (this._altTabPopup._thumbnailsEnabled) {
-                _drawArrow(arrow, St.Side.BOTTOM);
-            }
-        }));
-        this._list.add_actor(arrow);
-        this._arrows.push(arrow);
-
-        if (appIcon.cachedWindows.length == 1) {
-            arrow.hide();
-        }
     }
 };
 
