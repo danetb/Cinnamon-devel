@@ -318,7 +318,10 @@ AltTabPopup.prototype = {
         if (this._selectedWindow) {
             forwardIndex = windows.indexOf(this._selectedWindow);
         }
-        this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
+
+        if (g_allWsMode && !this._thumbnailsEnabled) { // restricted feature
+            this._appSwitcher._indicateItem(currentIndex, "_currentFocus", St.Side.TOP);
+        }
 
         // Make the initial selection
         if (this._appIcons.length > 0 && currentIndex >= 0) {
