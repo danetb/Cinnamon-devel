@@ -960,7 +960,7 @@ SwitcherList.prototype = {
 
         arrowWidth = Math.floor(rightPadding / 3);
         arrowHeight = arrowWidth * 2;
-        childBox.x1 = this.actor.width - arrowWidth - rightPadding / 2;
+        childBox.x1 = this.actor.width - rightPadding / 2;
         childBox.y1 = this.actor.height / 2 - arrowWidth;
         childBox.x2 = childBox.x1 + arrowWidth;
         childBox.y2 = childBox.y1 + arrowHeight;
