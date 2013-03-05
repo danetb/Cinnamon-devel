@@ -996,7 +996,8 @@ WindowManager.prototype = {
 
         let modifiers = binding.get_modifiers();
         let backwards = modifiers & Meta.VirtualModifier.SHIFT_MASK;
-        tabPopup.show(backwards, binding.get_name(), binding.get_mask());
+        if (!tabPopup.show(backwards, binding.get_name(), binding.get_mask()))
+            tabPopup.destroy();
     },
 
     _startA11ySwitcher : function(display, screen, window, binding) {
