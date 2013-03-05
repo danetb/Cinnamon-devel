@@ -77,6 +77,10 @@ function primaryModifier(mask) {
     return primary;
 }
 
+// Controls whether to show a thumbnail behind the icon if there
+// are more than one window having the same icon.
+var g_enableThumbnailBehindIcon = true;
+
 var g_allWsMode = false;
 var g_windowsToIgnore = [];
 
@@ -1269,9 +1273,7 @@ AppIcon.prototype = {
     set_size: function(sizeIn, focused) {
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
-        // we only show thumbnails if there are more than one window belonging to the same "app",
-        // otherwise the icon should be enough.
-        if (!this.showIcons || (this.showThumbnail && this.app && this.app.get_windows().length > 1)) {
+        if (!this.showIcons || (this.showThumbnail && g_enableThumbnailBehindIcon && this.app && this.app.get_windows().length > 1)) {
             this.icon = new St.Group();
             let clones = WindowUtils.createWindowClone(this.window, size, true, true);
             for (i in clones) {
