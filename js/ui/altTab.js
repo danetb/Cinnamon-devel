@@ -1277,15 +1277,12 @@ AppIcon.prototype = {
             for (i in clones) {
                 let clone = clones[i];
                 this.icon.add_actor(clone.actor);
-                // the following 2 lines are used when cloning without positions (param #4 = false)
-                //let [width, height] = clone.actor.get_size();
-                //clone.actor.set_position(Math.round((size - width) / 2), Math.round((size - height) / 2));
                 clone.actor.set_position(clone.x, clone.y);
             }
             if (this.showIcons) {
                 let [width, height] = clones[0].actor.get_size();
                 clones[0].actor.set_position(Math.floor((size - width)/2), 0);
-                let isize = Math.max(Math.ceil(size*(!focused?3/4:7/8)), iconSizes[iconSizes.length - 1]);
+                let isize = Math.max(Math.ceil(size * 3/4), iconSizes[iconSizes.length - 1]);
                 let icon = this._createApplicationIcon(isize);
                 this.icon.add_actor(icon);
                 icon.set_position(Math.floor((size - isize)/2), size - isize);
