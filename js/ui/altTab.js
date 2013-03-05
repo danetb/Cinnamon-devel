@@ -1257,6 +1257,15 @@ AppIcon.prototype = {
         return this.window.get_workspace() == global.screen.get_active_workspace() ? sizeIn : Math.floor(sizeIn * 3 / 4);
     },
 
+    _createApplicationIcon: function(size) {
+        return this.app ?
+            this.app.create_icon_texture(size) :
+            new St.Icon({ icon_name: 'application-default-icon',
+                icon_type: St.IconType.FULLCOLOR,
+                icon_size: size
+            });
+    },
+
     set_size: function(sizeIn, focused) {
         let size = this.calculateSlotSize(sizeIn);
         if (this.icon) {this.icon.destroy();}
@@ -1277,21 +1286,13 @@ AppIcon.prototype = {
                 let [width, height] = clones[0].actor.get_size();
                 clones[0].actor.set_position(Math.floor((size - width)/2), 0);
                 let isize = Math.max(Math.ceil(size*(!focused?3/4:7/8)), iconSizes[iconSizes.length - 1]);
-                let icon = this.app ?
-                    this.app.create_icon_texture(isize) :
-                    new St.Icon({ icon_name: 'application-default-icon',
-                                  icon_type: St.IconType.FULLCOLOR,
-                                  icon_size: isize });
+                let icon = this._createApplicationIcon(isize);
                 this.icon.add_actor(icon);
                 icon.set_position(Math.floor((size - isize)/2), size - isize);
             }
         }
         else {
-            this.icon = this.app ?
-                this.app.create_icon_texture(size) :
-                new St.Icon({ icon_name: 'application-default-icon',
-                              icon_type: St.IconType.FULLCOLOR,
-                              icon_size: size });
+            this.icon = this._createApplicationIcon(size);
         }
         // Make some room for the window title.
         this._label_bin.set_size(Math.floor(size * 1.2), Math.floor(size/2));
