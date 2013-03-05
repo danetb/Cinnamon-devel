@@ -501,7 +501,10 @@ AltTabPopup.prototype = {
                 this._finish();
                 return true;
             } else if (action == Meta.KeyBindingAction.PANEL_RUN_DIALOG) {
-                this.destroy();
+                if (this._currentApp >= 0) {
+                    let window = this._appIcons[this._currentApp].window;
+                    Main.activateWindow(window);
+                }
                 Mainloop.idle_add(function() {
                     Main.getRunDialog().open();
                 });
