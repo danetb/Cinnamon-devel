@@ -206,6 +206,9 @@ WindowManager.prototype = {
         // from ending up in the message tray.
         notification.setUrgency(MessageTray.Urgency.CRITICAL);
         notification.setTransient(true);
+        let button = new St.Button({ can_focus: true, label: _("Ignore") });
+        button.add_style_class_name('notification-button');
+        notification.addActor(button);
         source.notify(notification);
 
         let cleanup = null;
@@ -260,6 +263,9 @@ WindowManager.prototype = {
 
         notification.connect('destroy', function() {
             cleanup(false);
+        });
+        button.connect('clicked', function() {
+            cleanup(true);
         });
     },
 
