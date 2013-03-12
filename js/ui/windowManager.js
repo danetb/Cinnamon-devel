@@ -211,40 +211,11 @@ WindowManager.prototype = {
         notification.addActor(button);
         source.notify(notification);
 
-        let cleanup = null;
         let wDestroyId = null;
-        let handler = function(destroyed) {
-            if (destroyed) {
-                wDestroyId.forget();
-            }
-            cleanup(true);
-        };
-
-        const TIMEOUT = 3000;
-        const ATTENTION_LIMIT = 10000;
         let timeoutId = null;
-        let timerFunction = function() {
-            timeoutId = null;
-            let is_alerting = window.is_demanding_attention() || window.is_urgent();
-            if (!is_alerting || display.focus_window == window) {
-                cleanup(true);
-                return;
-            }
-            timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
-        };
-        timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
-        
-        
-        wDestroyId = Connector.connect(window.get_compositor_private(), 'destroy', function() {
-            handler(true);
-        });
-        let wFocusId = Connector.connect(display, 'notify::focus-window', function(display) {
-            if (display.focus_window == window) {
-                handler(false);
-            }
-        });
+        let wFocusId;
 
-        cleanup = function(destroy) {
+        let cleanup = function(destroy) {
             if (destroy) {
                 notification.destroy();
             }
@@ -257,6 +228,27 @@ WindowManager.prototype = {
             notification = null;
         };
 
+        const TIMEOUT = 3000;
+        let timerFunction = function() {
+            timeoutId = null;
+            let is_alerting = window.is_demanding_attention() || window.is_urgent();
+            if (!is_alerting || display.focus_window == window) {
+                cleanup(true);
+                return;
+            }
+            timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
+        };
+        timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
+
+        wDestroyId = Connector.connect(window.get_compositor_private(), 'destroy', function() {
+            cleanup(true);
+        });
+
+        wFocusId = Connector.connect(display, 'notify::focus-window', function(display) {
+            if (display.focus_window == window) {
+                cleanup(true);
+            }
+        });
         notification.connect('clicked', function() {
             Main.activateWindow(window);
         });
