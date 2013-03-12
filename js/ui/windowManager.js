@@ -202,9 +202,12 @@ WindowManager.prototype = {
         }
         let notification = new MessageTray.Notification(source, window.title, text,
                                                             { icon: icon });
-        // Must use highest urgency level to prevent notification
-        // from ending up in the message tray.
-        notification.setUrgency(MessageTray.Urgency.CRITICAL);
+        // CRITICAL makes the notification stay up until closed.
+        // HIGH urgency makes the notification go away after a while, possibly ending up in the message tray.
+        let urgency = AppletManager.get_role_provider_exists(AppletManager.Roles.NOTIFICATIONS)
+            ? MessageTray.Urgency.HIGH
+            : MessageTray.Urgency.CRITICAL;
+        notification.setUrgency(urgency);
         notification.setTransient(true);
         let button = new St.Button({ can_focus: true, label: _("Ignore") });
         button.add_style_class_name('notification-button');
