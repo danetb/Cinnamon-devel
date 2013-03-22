@@ -558,7 +558,7 @@ ExpoWorkspaceThumbnail.prototype = {
     },
 
     refreshTitle: function() {
-        if (!this.doomed) { // better safe than sorry
+        if (!this.doomed && this.metaWorkspace.index() >= 0) { // better safe than sorry
             this.title.set_text(Main.getWorkspaceName(this.metaWorkspace.index()));
         }
     },
