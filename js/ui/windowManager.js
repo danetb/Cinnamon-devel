@@ -114,9 +114,6 @@ WindowManager.prototype = {
             this._destroyWindowDone(cinnamonwm, actor);
         }));
 
-        global.display.connect('window-demands-attention', Lang.bind(this, this._onWindowDemandsAttention, false));
-        global.display.connect('window-marked-urgent', Lang.bind(this, this._onWindowDemandsAttention, true));
-
         this._cinnamonwm.connect('switch-workspace', Lang.bind(this, this._switchWorkspace));
         this._cinnamonwm.connect('minimize', Lang.bind(this, this._minimizeWindow));
         this._cinnamonwm.connect('maximize', Lang.bind(this, this._maximizeWindow));
@@ -153,115 +150,6 @@ WindowManager.prototype = {
         }));
         let workspaceSettings = new Gio.Settings({ schema: 'org.cinnamon.overrides' });
         this.workspacesOnlyOnPrimary = workspaceSettings.get_boolean("workspaces-only-on-primary");
-    },
-
-    _onWindowDemandsAttention: function(display, window, urgent) {
-        if (window.get_window_type() == Meta.WindowType.DESKTOP) {
-            // this seems to happen after monitor setups has changed
-            return;
-        }
-        if (window._mtSource) {
-            return;
-        }
-        if (!Main.messageTray) {
-            return;
-        }
-        let source = window._mtSource = new MessageTray.Source(window.title);
-        window._mtSource.connect('destroy', Lang.bind(this, function() {
-            delete window._mtSource;
-        }));
-        Main.messageTray.add(source);
-
-        let wsIndex = window.get_workspace().index();
-        let wsText = (wsIndex != global.screen.get_active_workspace_index()) ?
-            _(" on workspace %s").format(Main.getWorkspaceName(wsIndex)) :
-            "";
-        let reason = urgent ?
-            _("Window marked urgent") :
-            _("Window demanding attention");
-        let text = reason + wsText;
-        let tracker = Cinnamon.WindowTracker.get_default();
-        const size = 64;
-
-        let icon = new St.Group();
-        let clones = WindowUtils.createWindowClone(window, size, true, true);
-        for (i in clones) {
-            let clone = clones[i];
-            icon.add_actor(clone.actor);
-            clone.actor.set_position(clone.x, clone.y);
-        }
-        let [width, height] = clones[0].actor.get_size();
-        clones[0].actor.set_position(Math.floor((size - width)/2), 0);
-
-        let app = tracker.get_window_app(window);
-        let isize = Math.ceil(size*(3/4));
-        let icon2 = app ? app.create_icon_texture(isize) : null;
-        if (icon2) {
-            icon.add_actor(icon2);
-            icon2.set_position(Math.floor((size - isize)/2), size - isize);
-        }
-        let notification = new MessageTray.Notification(source, window.title, text,
-                                                            { icon: icon });
-        // CRITICAL makes the notification stay up until closed.
-        // HIGH urgency makes the notification go away after a while, possibly ending up in the message tray.
-        let urgency = AppletManager.get_role_provider_exists(AppletManager.Roles.NOTIFICATIONS)
-            ? MessageTray.Urgency.HIGH
-            : MessageTray.Urgency.CRITICAL;
-        notification.setUrgency(urgency);
-        notification.setTransient(true);
-        let button = new St.Button({ can_focus: true, label: _("Ignore") });
-        button.add_style_class_name('notification-button');
-        notification.addActor(button);
-        source.notify(notification);
-
-        let wDestroyId = null;
-        let timeoutId = null;
-        let wFocusId;
-
-        let cleanup = function(destroy) {
-            if (destroy) {
-                notification.destroy();
-            }
-            wDestroyId.disconnect();
-            wFocusId.disconnect();
-            if (timeoutId) {
-                Mainloop.source_remove(timeoutId);
-            }
-            window = null;
-            notification = null;
-        };
-
-        const TIMEOUT = 3000;
-        let timerFunction = function() {
-            timeoutId = null;
-            let is_alerting = window.is_demanding_attention() || window.is_urgent();
-            if (!is_alerting || display.focus_window == window) {
-                cleanup(true);
-                return;
-            }
-            timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
-        };
-        timeoutId = Mainloop.timeout_add(TIMEOUT, timerFunction);
-
-        wDestroyId = Connector.connect(window.get_compositor_private(), 'destroy', function() {
-            cleanup(true);
-        });
-
-        wFocusId = Connector.connect(display, 'notify::focus-window', function(display) {
-            if (display.focus_window == window) {
-                cleanup(true);
-            }
-        });
-        notification.connect('clicked', function() {
-            Main.activateWindow(window);
-        });
-
-        notification.connect('destroy', function() {
-            cleanup(false);
-        });
-        button.connect('clicked', function() {
-            cleanup(true);
-        });
     },
 
     blockAnimations: function() {
