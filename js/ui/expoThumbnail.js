@@ -1304,7 +1304,7 @@ ExpoThumbnailsBox.prototype = {
                 this.activateSelectedWorkspace();
                 return true;
             }
-            if (symbol === Clutter.F1) {
+            if (symbol === Clutter.F1 && !(modifiers & ctrlAltMask)) {
                 this.showHelp();
                 return true;
             }
