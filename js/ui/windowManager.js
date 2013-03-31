@@ -906,16 +906,17 @@ WindowManager.prototype = {
     _showWorkspaceGrid : function(guardian) {
         if (this.showingOsdGrid) { return;}
 
-        this._forEachWorkspaceMonitor(function(monitor) {
+        this._forEachWorkspaceMonitor(function(monitor, mIndex) {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
             let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
+            dialogLayout.style = "padding: 4px";
             osd.add_actor(dialogLayout);
 
             let cells = [];
             let rows = [];
-            const INACTIVE_STYLE = "background-color: rgb(0,0,0)";
-            const ACTIVE_STYLE = "background-color: rgb(0,255,0)";
+            const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1)";
+            const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9)";
             let activeWsIndex = global.screen.get_active_workspace_index();
             let [columnCount, rowCount] = Main.getWorkspaceGeometry();
             let cellCount = 0;
@@ -923,21 +924,61 @@ WindowManager.prototype = {
                 let row = new St.BoxLayout({});
                 rows.push(row);
                 for (let c = 0; c < columnCount; ++c) {
-                    let cell = new St.BoxLayout({ style_class: cellCount < global.screen.n_workspaces ? 'modal-dialog' : null});
+                    let isWs = cellCount < global.screen.n_workspaces;
+                    let cell = new St.BoxLayout({ width: monitor.width/16, height: monitor.height/16, style_class: isWs ? 'modal-dialog' : null});
+                    cell.isWs = isWs;
                     cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
-                    ++cellCount;
                     row.add_actor(cell);
+                    ++cellCount;
                     cells.push(cell);
                 }
             }
             (Main.getWorkspaceRowsTopDown() ? rows : rows.reverse()).forEach(function(row) {
                 dialogLayout.add_actor(row);
             });
+            let populateCell = function(cell) {
+                cell.destroy_children();
+                let windows = Main.getTabList(global.screen.get_workspace_by_index(cell.index)).filter(function(window) {
+                    return window.get_monitor() == mIndex && (cell.index == activeWsIndex || !window.is_on_all_workspaces());
+                }, this);
+                let vBorder = cell.get_theme_node().get_border_width(St.Side.TOP);
+                let [cellWidth, cellHeight] = [cell.width - vBorder*2, cell.height - vBorder*2];
+                let scale_x = cellWidth/monitor.width;
+                let scale_y = cellHeight/monitor.height;
+                let scale = Math.min(scale_x, scale_y);
+
+                windows.reverse().forEach(function(window) {
+                    let actor = window.get_compositor_private();
+                    let monitorIndex = window.get_monitor();
+                    let [x,y] = [actor.x - monitor.x, actor.y - monitor.y];
+                    let [width,height] = [actor.width, actor.height];
+                    let clone = new Clutter.Clone({
+                        source: actor.get_texture(),
+                        x: vBorder + x*scale,
+                        y: vBorder + y*scale,
+                        width:width, height:height, scale_x: scale, scale_y: scale});
+                    cell.add_actor(clone);
+                },this);
+                let dimmer = cell.dimmer = new St.Group({x: vBorder, y:vBorder, width: cellWidth, height: cellHeight,
+                    style: "background-color: rgba(0,0,0,0.3)", visible: cell.index!=activeWsIndex
+                });
+                cell.add_actor(dimmer);
+            }
+            cells.filter(function(cell) {return cell.isWs;}).forEach(function(cell, index) {
+                cell.index = index;
+                populateCell(cell);
+            }, this);
 
             let switchConnection = Connector.connect(global.window_manager, 'switch-workspace', function() {
-                cells[activeWsIndex].style = INACTIVE_STYLE;
+                // Both the old and the new active cell need to be repopulated, due to the possible
+                // presence of windows that are displayed on all workspaces, that we only want to
+                // display on the active workspace.
+                let oldcell = cells[activeWsIndex];
                 activeWsIndex = global.screen.get_active_workspace_index();
+                oldcell.style = INACTIVE_STYLE;
+                populateCell(oldcell);
                 cells[activeWsIndex].style = ACTIVE_STYLE;
+                populateCell(cells[activeWsIndex]);
             });
             switchConnection.tie(osd);
             osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
