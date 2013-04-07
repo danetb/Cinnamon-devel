@@ -405,11 +405,13 @@ __proto__: ModalDialog.ModalDialog.prototype,
             this._launcherLayout.destroy_children();
         }
         else {
-            this._launcherLayout = new St.BoxLayout({ vertical:    false });
-            this.contentLayout.add(this._launcherLayout, { y_align: St.Align.START });
+            this._launcherLayoutBox = new St.BoxLayout({ vertical: true, x_align: St.Align.END });
+            this.contentLayout.add(this._launcherLayoutBox, { y_align: St.Align.START });
+            this._launcherLayout = new St.BoxLayout({ vertical:    false, x_align: St.Align.END });
+            this._launcherLayoutBox.add(this._launcherLayout, { y_align: St.Align.START });
             global.focus_manager.add_group(this._launcherLayout);
             this._launcherMessage = new St.Label({ style_class: 'run-dialog-error-label' });
-            this.contentLayout.add(this._launcherMessage, { y_align: St.Align.START });
+            this._launcherLayoutBox.add(this._launcherMessage, { y_align: St.Align.START, x_align: St.Align.END });
         }
 
         let addSeparator = Lang.bind(this, function() {
@@ -422,6 +424,7 @@ __proto__: ModalDialog.ModalDialog.prototype,
             if (registry[launcher.title]) {return;}
             registry[launcher.title] = 1;
             let actor = new St.Bin({ style_class: 'panel-launcher',
+                style: 'padding: 5px',
                 can_focus: true,
                 reactive: true,
                 x_fill: true,
@@ -463,7 +466,7 @@ __proto__: ModalDialog.ModalDialog.prototype,
 
             let icon = app ? app.create_icon_texture(ICONSIZE) : null;
             if (!icon) {
-                icon = St.TextureCache.get_default().load_gicon(null, appinfo.get_icon(), 32);
+                icon = St.TextureCache.get_default().load_gicon(null, appinfo.get_icon(), ICONSIZE);
             }
             let launcher = {
                 title: (app ? app : appinfo).get_name(),
