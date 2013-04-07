@@ -417,7 +417,10 @@ __proto__: ModalDialog.ModalDialog.prototype,
             this._launcherLayout.add(box, St.Align.MIDDLE);
         });
 
+        let registry = {};
         let createLauncher = Lang.bind(this, function(icon, launcher) {
+            if (registry[launcher.title]) {return;}
+            registry[launcher.title] = 1;
             let actor = new St.Bin({ style_class: 'panel-launcher',
                 can_focus: true,
                 reactive: true,
