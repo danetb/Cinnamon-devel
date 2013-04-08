@@ -910,6 +910,15 @@ WindowManager.prototype = {
         const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9)";
         let activeWsIndex = global.screen.get_active_workspace_index();
         let [columnCount, rowCount] = Main.getWorkspaceGeometry();
+
+        // Find out the correct z-order (to handle always-on-top windows)
+        // Adapted from expoThumbnail.js
+        let stack = global.get_window_actors();
+        let stackIndices = {};
+        for (let i = 0; i < stack.length; i++) {
+            stackIndices[stack[i].get_meta_window()] = i;
+        }
+
         this._forEachWorkspaceMonitor(function(monitor, mIndex) {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
@@ -960,7 +969,9 @@ WindowManager.prototype = {
                 let scale_y = cellHeight/monitor.height;
                 let scale = Math.min(scale_x, scale_y);
 
-                windows.reverse().forEach(function(window) {
+                windows.sort(function(a, b){
+                    return stackIndices[a] - stackIndices[b];
+                }).forEach(function(window) {
                     let actor = window.get_compositor_private();
                     let [x,y] = [actor.x - monitor.x, actor.y - monitor.y];
                     let [width,height] = [actor.width, actor.height];
