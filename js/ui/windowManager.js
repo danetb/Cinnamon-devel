@@ -906,6 +906,10 @@ WindowManager.prototype = {
     _showWorkspaceGrid : function(guardian) {
         if (this.showingOsdGrid) { return;}
 
+        const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1)";
+        const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9)";
+        let activeWsIndex = global.screen.get_active_workspace_index();
+        let [columnCount, rowCount] = Main.getWorkspaceGeometry();
         this._forEachWorkspaceMonitor(function(monitor, mIndex) {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
@@ -915,17 +919,26 @@ WindowManager.prototype = {
 
             let cells = [];
             let rows = [];
-            const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1)";
-            const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9)";
-            let activeWsIndex = global.screen.get_active_workspace_index();
-            let [columnCount, rowCount] = Main.getWorkspaceGeometry();
+            
+            // Find the right size for the workspace thumbnails. We don't want to take up
+            // too much of the monitor, and we want the thumbnails to be thumbnail-sized.
+            let heightAvail = monitor.height/1.5;
+            let widthAvail = monitor.width/1.5;
+            const MAXXOR = 6;
+            let rawdims = [Math.min(widthAvail/columnCount, monitor.width/MAXXOR), Math.min(heightAvail/rowCount, monitor.height/MAXXOR)];
+            let widthFirst = columnCount >= rowCount;
+            let [cWidth, cHeight] = (widthFirst
+                ? [rawdims[0], (rawdims[0]) * (monitor.height/monitor.width)]
+                : [(rawdims[1]) / (monitor.height/monitor.width), (rawdims[1])]
+                );
+            
             let cellCount = 0;
             for (let r = 0; r < rowCount; ++r) {
                 let row = new St.BoxLayout({});
                 rows.push(row);
                 for (let c = 0; c < columnCount; ++c) {
                     let isWs = cellCount < global.screen.n_workspaces;
-                    let cell = new St.BoxLayout({ width: monitor.width/16, height: monitor.height/16, style_class: isWs ? 'modal-dialog' : null});
+                    let cell = new St.BoxLayout({ width: cWidth, height: cHeight, style_class: isWs ? 'modal-dialog' : null});
                     cell.isWs = isWs;
                     cell.style = cellCount == activeWsIndex ? ACTIVE_STYLE : INACTIVE_STYLE;
                     row.add_actor(cell);
@@ -949,7 +962,6 @@ WindowManager.prototype = {
 
                 windows.reverse().forEach(function(window) {
                     let actor = window.get_compositor_private();
-                    let monitorIndex = window.get_monitor();
                     let [x,y] = [actor.x - monitor.x, actor.y - monitor.y];
                     let [width,height] = [actor.width, actor.height];
                     let clone = new Clutter.Clone({
