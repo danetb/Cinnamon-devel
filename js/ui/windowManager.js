@@ -922,9 +922,9 @@ WindowManager.prototype = {
             
             // Find the right size for the workspace thumbnails. We don't want to take up
             // too much of the monitor, and we want the thumbnails to be thumbnail-sized.
-            let heightAvail = monitor.height/1.5;
-            let widthAvail = monitor.width/1.5;
-            const MAXXOR = 6;
+            let heightAvail = monitor.height/1.1;
+            let widthAvail = monitor.width/1.1;
+            const MAXXOR = 16;
             let rawdims = [Math.min(widthAvail/columnCount, monitor.width/MAXXOR), Math.min(heightAvail/rowCount, monitor.height/MAXXOR)];
             let widthFirst = columnCount >= rowCount;
             let [cWidth, cHeight] = (widthFirst
