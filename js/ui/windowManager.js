@@ -1103,7 +1103,7 @@ WindowManager.prototype = {
         };
         // We don't get the first key-press event until after 400 to 500 milliseconds,
         // so we use a timer to speed up the responsiveness.
-        let timerId = Mainloop.timeout_add(250, Lang.bind(this, function() {
+        let timerId = Mainloop.timeout_add(150, Lang.bind(this, function() {
             (Lang.bind(this, onKeyPressRelease))(null, null, false, true);
         }));
         actor.connect('key-press-event', Lang.bind(this, onKeyPressRelease, true));
