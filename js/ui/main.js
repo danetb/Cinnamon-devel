@@ -31,6 +31,7 @@ const NotificationDaemon = imports.ui.notificationDaemon;
 const WindowAttentionHandler = imports.ui.windowAttentionHandler;
 const Scripting = imports.ui.scripting;
 const CinnamonDBus = imports.ui.cinnamonDBus;
+const LookingGlassDBus = imports.ui.lookingGlassDBus;
 const WindowManager = imports.ui.windowManager;
 const ThemeManager = imports.ui.themeManager;
 const Magnifier = imports.ui.magnifier;
@@ -57,6 +58,7 @@ let notificationDaemon = null;
 let windowAttentionHandler = null;
 let recorder = null;
 let cinnamonDBusService = null;
+let lookingGlassDBusService = null;
 let modalCount = 0;
 let modalActorFocusStack = [];
 let uiGroup = null;
@@ -217,6 +219,7 @@ function start() {
     Gio.DesktopAppInfo.set_desktop_env('GNOME');
 
     cinnamonDBusService = new CinnamonDBus.Cinnamon();
+    lookingGlassDBusService = new LookingGlassDBus.CinnamonLookingGlass();
     // Force a connection now; dbus.js will do this internally
     // if we use its name acquisition stuff but we aren't right
     // now; to do so we'd need to convert from its async calls
@@ -736,12 +739,12 @@ function _log(category, msg) {
                 text += ' ';
         }
     }
-    let out = {timestamp: new Date().getTime(),
+    let out = {timestamp: new Date().getTime().toString(),
                          category: category,
                          message: text };
     _errorLogStack.push(out);
-    if(cinnamonDBusService)
-        cinnamonDBusService.notifyLgLogUpdate();
+    if(lookingGlassDBusService)
+        lookingGlassDBusService.emitLogUpdate();
     if (can_log) lg_log_file.write(renderLogLine(out), null);
 }
 
@@ -810,7 +813,7 @@ function formatTime(d) {
 }
 
 function renderLogLine(line) {
-    return line.category + ' t=' + formatTime(new Date(line.timestamp)) + ' ' + line.message + '\n';
+    return line.category + ' t=' + formatTime(new Date(parseInt(line.timestamp))) + ' ' + line.message + '\n';
 }
 
 function logStackTrace(msg) {
