@@ -44,6 +44,7 @@ nobase_dist_js_DATA = \
 	ui/lightbox.js		\
 	ui/link.js		\
 	ui/lookingGlass.js	\
+	ui/lookingGlassDBus.js	\
 	ui/magnifier.js		\
 	ui/magnifierDBus.js	\
 	ui/main.js		\
