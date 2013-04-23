@@ -55,7 +55,7 @@ const MediaServer2PlayerIFace = {
                 inSignature: '',
                 outSignature: '' },
               { name: 'SetPosition',
-                inSignature: 'a{ov}',
+                inSignature: 'ox',
                 outSignature: '' }],
     properties: [{ name: 'Metadata',
                    signature: 'a{sv}',
@@ -99,8 +99,8 @@ const MediaServer2PlayerIFace = {
 
 /* global values */
 let icon_path = "/usr/share/cinnamon/theme/";
-let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "noise", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "pithos", "gnome-mplayer", "nuvolaplayer" ];
-let support_seek = [ "clementine", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "amarok", "noise", "xnoise", "gmusicbrowser", "spotify", "vlc", "beatbox", "gnome-mplayer" ];
+let compatible_players = [ "clementine", "mpd", "exaile", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "guayadeque", "amarok", "googlemusicframe", "xbmc", "noise", "xnoise", "gmusicbrowser", "spotify", "audacious", "vlc", "beatbox", "songbird", "pithos", "gnome-mplayer", "nuvolaplayer", "qmmp" ];
+let support_seek = [ "clementine", "banshee", "rhythmbox", "rhythmbox3", "pragha", "quodlibet", "amarok", "noise", "xnoise", "gmusicbrowser", "spotify", "vlc", "beatbox", "gnome-mplayer", "qmmp" ];
 /* dummy vars for translation */
 let x = _("Playing");
 x = _("Paused");
@@ -185,6 +185,9 @@ MediaServer2Player.prototype = {
                     callback(this, position);
             }));
     },
+    setPosition: function(value) {
+        this.SetRemote('Position', value);
+    },
     getShuffle: function(callback) {
         this.GetRemote('Shuffle', Lang.bind(this,
             function(shuffle, ex) {
@@ -223,6 +226,14 @@ MediaServer2Player.prototype = {
         else
             value = "None"
         this.SetRemote('LoopStatus', value);
+    },
+    getCanSeek: function(callback) {
+        this.GetRemote('CanSeek', Lang.bind(this,
+            function(canSeek, err) {
+                if (!err) {
+                    callback(this, canSeek);
+                }
+            }));
     }
 }
 DBus.proxifyPrototype(MediaServer2Player.prototype, MediaServer2PlayerIFace)
@@ -272,7 +283,7 @@ ControlButton.prototype = {
             style_class: 'sound-button-icon',
         });
         this.button.set_child(this.icon);
-        this.actor.add_actor(this.button);
+        this.actor.add_actor(this.button);        
     },
     getActor: function() {
         return this.actor;
@@ -344,6 +355,7 @@ Player.prototype = {
     _init: function(system_status_button, owner) {
         PopupMenu.PopupMenuSection.prototype._init.call(this);
 
+        this.showPosition = true; // @todo: Get from settings
         this._owner = owner;
         this._system_status_button = system_status_button;
         this._name = this._owner.split('.')[3];
@@ -377,7 +389,7 @@ Player.prototype = {
         this.infos_top.add_actor(this._artist.getActor());
         this.infos_bottom.add_actor(this._album.getActor());
         this.infos_top.add_actor(this._title.getActor());
-        this.infos_bottom.add_actor(this._time.getActor());
+
         this._trackInfosTop.set_child(this.infos_top);
         this._trackInfosBottom.set_child(this.infos_bottom);
 
@@ -402,6 +414,28 @@ Player.prototype = {
         this._trackControls.set_child(this.controls);
         this.addActor(this._trackControls);
 
+        this._seekControls = new St.Bin({style_class: 'sound-seek', x_align: St.Align.START});
+        this.seekControls = new St.BoxLayout({style_class: 'sound-seek-box'});
+        this.seekControls.add_actor(this._time.getActor());
+
+        this._positionSlider = new PopupMenu.PopupSliderMenuItem(0);
+        this._positionSlider.connect('value-changed', Lang.bind(this, function(item) {
+            let time = item._value * this._songLength;
+            this._time.setLabel(this._formatTime(time) + " / " + this._formatTime(this._songLength));
+        }));
+        this._positionSlider.connect('drag-end', Lang.bind(this, function(item) {
+            let time = item._value * this._songLength;
+            this._time.setLabel(this._formatTime(time) + " / " + this._formatTime(this._songLength));
+            this._wantedSeekValue = Math.round(time * 1000000);
+            this._mediaServerPlayer.SetPositionRemote(this._trackObj, time * 1000000);
+        }));
+
+        this.sliderBin = new St.Bin({style_class: 'sound-seek-slider'});
+        this.sliderBin.set_child(this._positionSlider.actor);
+        this.seekControls.add_actor(this.sliderBin);
+        this._seekControls.set_child(this.seekControls);
+        this.addActor(this._seekControls);
+
         this._mediaServer.getRaise(Lang.bind(this, function(sender, raise) {
             if (raise) {
                 this._raiseButton = new ControlButton('go-up',
@@ -421,12 +455,20 @@ Player.prototype = {
         }));
 
         /* this players don't support seek */
-        if (support_seek.indexOf(this._name) == -1)
+        if (support_seek.indexOf(this._name) == -1) {
             this._time.hide();
+            this.showPosition = false;
+            this._positionSlider.hide();
+        }
+        this._getStatus();
         this._trackId = {};
+        this._getMetadata();
         this._currentTime = 0;
+        this._getPosition();
+        this._wantedSeekValue = 0;
+        this._updatePositionSlider();
 
-        let propChangedId = this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
+        this._prop.connect('PropertiesChanged', Lang.bind(this, function(sender, iface, value) {
             if (value["PlaybackStatus"])
                 this._setStatus(iface, value["PlaybackStatus"]);
             if (value["Metadata"])
@@ -437,35 +479,28 @@ Player.prototype = {
                     this._setStatus(iface, value["playbackStatus"]);
                 if (value["metadata"])
                     this._setMetadata(sender, value["metadata"]);
-            }
+            } 
         }));
 
-        let seekedId = this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
-            this._setPosition(sender, value);
+        this._mediaServerPlayer.connect('Seeked', Lang.bind(this, function(sender, value) {
+            if (value > 0) {
+                this._setPosition(value);
+            }
+            // Seek initiated by the position slider
+            else if (this._wantedSeekValue > 0) {
+                // Some broken gstreamer players (Banshee) reports always 0
+                // when the track is seeked so we set the position at the
+                // value we set on the slider
+                this._setPosition(this._wantedSeekValue);
+            }
+            // Seek value send by the player
+            else
+                this._setPosition(value);
+
+            this._wantedSeekValue = 0;
         }));
 
-        let initialTimeoutId = Mainloop.timeout_add(500, Lang.bind(this, function() {
-            // We defer these function calls a little, because they cause asynchronous
-            // behavior that may lead to post-destruction access of UI elements if the player
-            // is removed very quickly after being created (happens when there are more than
-            // one supported player running after a Cinnamon restart).
-            this._getStatus();
-            this._getMetadata();
-            initialTimeoutId = null;
-        }));
-        this.connect('destroy', Lang.bind(this, function() {
-            this.stopped = true;
-            if (this.positionTimeoutId) {
-                Mainloop.source_remove(this.positionTimeoutId);
-            }
-            if (initialTimeoutId) {
-                Mainloop.source_remove(initialTimeoutId);
-            }
-            this._prop.disconnect(propChangedId);
-            this._mediaServerPlayer.disconnect(seekedId);
-        }));
-
-        this._getPosition();
+        Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
     },
 
     _getName: function() {
@@ -477,28 +512,34 @@ Player.prototype = {
         this._playerInfo.setText(this._getName() + " - " + _(status));
     },
 
-    _setPosition: function(sender, value) {
-        if (this.stopped) {
-            // this callback can be called after we have been destroyed, and there
-            // doesn't seem to be much we can do about it.
-            return;
+    _updatePositionSlider: function(position) {
+        this._mediaServerPlayer.getCanSeek(Lang.bind(this, function(sender, canSeek) {
+            this._canSeek = canSeek;
+            
+            if (this._songLength == 0 || position == false)
+                this._canSeek = false
+
+            if (this._playerStatus == "Playing" && this._canSeek && this.showPosition)
+                this._positionSlider.actor.show();
+            else
+                this._positionSlider.actor.hide();
+        }));
+    },
+
+    _setPosition: function(value) {
+        if (value == null && this._playerStatus != 'Stopped') {
+            this._updatePositionSlider(false);
         }
-        //qmmp was giving -1000 when stopped or not playing, which in turn would give 59:59 in the sound menu
-        if (value >= 0) {
-            this._stopTimer();
+        else {
             this._currentTime = value / 1000000;
             this._updateTimer();
-        }
-        if (this._playerStatus == "Playing") {
-            this._runTimer();
         }
     },
 
     _getPosition: function() {
-        this._mediaServerPlayer.getPosition(Lang.bind(this,
-            this._setPosition
-        ));
-        this.positionTimeoutId = Mainloop.timeout_add(1000, Lang.bind(this, this._getPosition));
+        this._mediaServerPlayer.getPosition(Lang.bind(this, function(sender, value) {
+            this._setPosition(value);
+        }));
     },
 
     _setMetadata: function(sender, metadata) {
@@ -529,13 +570,10 @@ Player.prototype = {
             this._title.setLabel(metadata["xesam:title"].toString());
         else
             this._title.setLabel(_("Unknown Title"));
-        /*if (metadata["mpris:trackid"]) {
-            this._trackId = {
-                _init: function() {
-                    DBus.session.proxifyObject(this, this._owner, metadata["mpris:trackid"]);
-                }
-            }
-        }*/
+        
+        if (metadata["mpris:trackid"]) {
+            this._trackObj = metadata["mpris:trackid"];
+        }
 
         let change = false;
         if (metadata["mpris:artUrl"]) {
@@ -562,10 +600,8 @@ Player.prototype = {
                     cover.read_async(null, null, Lang.bind(this, this._onReadCover));
                 }
                 else {
-                    cover_path = decodeURIComponent(this._trackCoverFile.substr(7));
-                    //qmmp doesn't prepend the "file://"
-                    if(sender._dbusBusName == 'org.mpris.MediaPlayer2.qmmp')
-                        cover_path = decodeURIComponent(this._trackCoverFile);
+                    cover_path = decodeURIComponent(this._trackCoverFile);
+                    cover_path = cover_path.replace("file://", "");
                     this._showCover(cover_path);
                 }
             }
@@ -581,6 +617,7 @@ Player.prototype = {
     },
 
     _setStatus: function(sender, status) {
+        this._updatePositionSlider();
         this._playerStatus = status;
         if (status == "Playing") {
             this._playButton.setIcon("media-playback-pause");
@@ -594,6 +631,7 @@ Player.prototype = {
             this._playButton.setIcon("media-playback-start");
             this._stopTimer();
         }
+
         this._playerInfo.setImage("player-" + status.toLowerCase());
         this._setName(status);
     },
@@ -611,25 +649,34 @@ Player.prototype = {
     },
 
     _updateTimer: function() {
+        if (this.showPosition && this._canSeek) {
+            if (!isNaN(this._currentTime) && !isNaN(this._songLength) && this._currentTime > 0)
+                this._positionSlider.setValue(this._currentTime / this._songLength);
+            else
+                this._positionSlider.setValue(0);
+        }
         this._time.setLabel(this._formatTime(this._currentTime) + " / " + this._formatTime(this._songLength));
     },
 
     _runTimer: function() {
-        /*if (!Tweener.resumeTweens(this)) {
-            Tweener.addTween(this,
-                { time: this._songLength - this._currentTime,
-                  transition: 'linear',
-                  onUpdate: Lang.bind(this, this._updateTimer) });
-        }*/
+        if (this._playerStatus == 'Playing') {
+            this._timeoutId = Mainloop.timeout_add_seconds(1, Lang.bind(this, this._runTimer));
+            this._currentTime += 1;
+            this._updateTimer();
+        }
     },
 
     _pauseTimer: function() {
-        //Tweener.pauseTweens(this);
+        if (this._timeoutId != 0) {
+            Mainloop.source_remove(this._timeoutId);
+            this._timeoutId = 0;
+        }
+        this._updateTimer();
     },
 
     _stopTimer: function() {
-        /*Tweener.removeTweens(this);*/
         this._currentTime = 0;
+        this._pauseTimer();
         this._updateTimer();
     },
 
@@ -724,7 +771,7 @@ MediaPlayerLauncher.prototype = {
     },
 
     activate: function (event) {
-        this._menu.actor.hide();
+    	this._menu.actor.hide();
         this._app.activate_full(-1, event.get_time());
         return true;
     }
@@ -915,18 +962,10 @@ MyApplet.prototype = {
     },
 
     _cleanup: function() {
-        if (this._outputTitle) {
-            this._outputTitle.destroy(); this._outputTitle = 0;
-        }
-        if (this._outputSlider) {
-            this._outputSlider.destroy(); this._outputSlider = 0;
-        }
-        if (this._inputTitle) {
-            this._inputTitle.destroy(); this._inputTitle = 0;
-        }
-        if (this._inputSlider) {
-            this._inputSlider.destroy(); this._inputSlider = 0;
-        }
+        if (this._outputTitle) this._outputTitle.destroy();
+        if (this._outputSlider) this._outputSlider.destroy();
+        if (this._inputTitle) this._inputTitle.destroy();
+        if (this._inputSlider) this._inputSlider.destroy();
         this.menu.removeAll();
      },
 
@@ -935,21 +974,21 @@ MyApplet.prototype = {
         this._volumeControlShown = true;
 
         if (this._nbPlayers()==0){
-            this._availablePlayers = new Array();
+        	this._availablePlayers = new Array();
             let appsys = Cinnamon.AppSystem.get_default();
             let allApps = appsys.get_all();
             let listedDesktopFiles = new Array();
             for (let y=0; y<allApps.length; y++) {
-                let app = allApps[y];
-                let entry = app.get_tree_entry();
-                let path = entry.get_desktop_file_path();
-                for (var p=0; p<compatible_players.length; p++) {
+            	let app = allApps[y];
+            	let entry = app.get_tree_entry();
+            	let path = entry.get_desktop_file_path();
+            	for (var p=0; p<compatible_players.length; p++) {
                     let desktopFile = compatible_players[p]+".desktop";
-                    if (path.indexOf(desktopFile) != -1 && listedDesktopFiles.indexOf(desktopFile) == -1) {
-                        this._availablePlayers.push(app);
+            		if (path.indexOf(desktopFile) != -1 && listedDesktopFiles.indexOf(desktopFile) == -1) {
+                		this._availablePlayers.push(app);
                         listedDesktopFiles.push(desktopFile);
-                    }
-                }
+            		}
+           		}
             }
 
             if (this._availablePlayers.length > 0){
@@ -1098,19 +1137,19 @@ MyApplet.prototype = {
             this._mutedChanged (null, null, '_output');
             this._volumeChanged (null, null, '_output');
             let sinks = this._control.get_sinks();
-            this._selectDeviceItem.menu.removeAll();
-            for (let i = 0; i < sinks.length; i++) {
-                let sink = sinks[i];
-                let menuItem = new PopupMenu.PopupMenuItem(sink.get_description());
-                if (sinks[i].get_id() == this._output.get_id()) {
-                    menuItem.setShowDot(true);
-                }
-                menuItem.connect('activate', Lang.bind(this, function() {
-                    log('Changing default sink to ' + sink.get_description());
-                    this._control.set_default_sink(sink);
-                }));
-                this._selectDeviceItem.menu.addMenuItem(menuItem);
-            }
+	        this._selectDeviceItem.menu.removeAll();
+	        for (let i = 0; i < sinks.length; i++) {
+	        	let sink = sinks[i];
+	        	let menuItem = new PopupMenu.PopupMenuItem(sink.get_description());
+	        	if (sinks[i].get_id() == this._output.get_id()) {
+	        		menuItem.setShowDot(true);
+	        	}
+	        	menuItem.connect('activate', Lang.bind(this, function() {
+	        		log('Changing default sink to ' + sink.get_description());
+	                this._control.set_default_sink(sink);
+	            }));
+	            this._selectDeviceItem.menu.addMenuItem(menuItem);
+	        }
         } else {
             this._outputSlider.setValue(0);
             this.setIconName('audio-volume-muted-symbolic');

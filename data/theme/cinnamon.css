@@ -797,7 +797,7 @@ StScrollBar StButton#vhandle:hover {
 .switcher-list {
 	background: rgba(80,80,80,0.8);
 	border: 2px solid #a5a5a5;
-	border-radius: 24px;
+	border-radius: 8px;
 	padding: 20px;
 	font-size: 9pt;
 	color: white;
@@ -1450,7 +1450,7 @@ StScrollBar StButton#vhandle:hover {
 .sound-button StIcon {
 	icon-size: 1.4em;
 }
-.sound-track-infos {
+.sound-track-infos {	
 	padding-left: 5px;
 	padding-right: 5px;
 	padding-top: 5px;
@@ -1472,6 +1472,18 @@ StScrollBar StButton#vhandle:hover {
 	padding-left: 15px;
 	padding-right: 15px;	
 	max-width: 220px;
+}
+.sound-seek-box {
+   padding-left: 20px;
+}
+.sound-seek-box StLabel {
+   padding-top: 2px;
+}
+.sound-seek-box StIcon {
+   icon-size: 1em;
+}
+.sound-seek-slider {
+   width: 140px;   
 }
 .sound-volume-menu-item {
 	padding: .4em 1.75em;
@@ -1656,6 +1668,10 @@ StScrollBar StButton#vhandle:hover {
     padding: 6px;
 }
 
+.desklet-drag-placeholder { 
+    border: 2px solid #6daa00;
+    background-color: rgba(109,170, 0, 0.3);
+}
 /* ===================================================================
  * Clock Desklet (desklet.js) 
  * ===================================================================*/
