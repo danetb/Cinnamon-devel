@@ -726,9 +726,15 @@ Chrome.prototype = {
     },
 
     _queueUpdateRegions: function() {
-        if (!this._updateRegionIdle && !this._freezeUpdateCount)
-            this._updateRegionIdle = Mainloop.idle_add(Lang.bind(this, this.updateRegions),
-                                                       Meta.PRIORITY_BEFORE_REDRAW);
+        if (this._freezeUpdateCount) {
+            return;
+        }
+
+        if (this._updateRegionIdle) {
+            Mainloop.source_remove(this._updateRegionIdle);
+        }
+        this._updateRegionIdle = Mainloop.idle_add(Lang.bind(this, this.updateRegions),
+            Meta.PRIORITY_BEFORE_REDRAW);
     },
 
     freezeUpdateRegions: function() {
@@ -820,17 +826,15 @@ Chrome.prototype = {
     },
 
     updateRegions: function() {
+        if (this._updateRegionIdle) {
+            this._updateRegionIdle = 0;
+        }
         let primary = this._primaryMonitor;
         if (!primary) return false;
 
-        let rects = [], struts = [], i;
+        let rects = [], struts = [];
 
-        if (this._updateRegionIdle) {
-            Mainloop.source_remove(this._updateRegionIdle);
-            this._updateRegionIdle = 0;
-        }
-
-        for (i = 0; i < this._trackedActors.length; i++) {
+        for (let i = 0, iMax = this._trackedActors.length; i < iMax; ++i) {
             let actorData = this._trackedActors[i];
             if ((!actorData.affectsInputRegion && !actorData.affectsStruts) ||
                  primary.inFullscreen)
@@ -857,6 +861,11 @@ Chrome.prototype = {
             let x2 = Math.min(x + w, global.screen_width);
             let y1 = Math.max(y, 0);
             let y2 = Math.min(y + h, global.screen_height);
+
+            if (x2-x1 <= 0 || y2-y1 <= 0 ) {
+                global.logError("bad strut: " + [x1, x2, y1, y2].join(", "));
+                continue;
+            }
 
             // NetWM struts are not really powerful enought to handle
             // a multi-monitor scenario, they only describe what happens
