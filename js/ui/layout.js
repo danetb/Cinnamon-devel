@@ -725,9 +725,15 @@ Chrome.prototype = {
     },
 
     _queueUpdateRegions: function() {
-        if (!this._updateRegionIdle && !this._freezeUpdateCount)
-            this._updateRegionIdle = Mainloop.idle_add(Lang.bind(this, this.updateRegions),
-                                                       Meta.PRIORITY_BEFORE_REDRAW);
+        if (this._freezeUpdateCount) {
+            return;
+        }
+
+        if (this._updateRegionIdle) {
+            Mainloop.source_remove(this._updateRegionIdle);
+        }
+        this._updateRegionIdle = Mainloop.idle_add(Lang.bind(this, this.updateRegions),
+            Meta.PRIORITY_BEFORE_REDRAW);
     },
 
     freezeUpdateRegions: function() {
@@ -819,18 +825,15 @@ Chrome.prototype = {
     },
 
     updateRegions: function() {
+        if (this._updateRegionIdle) {
+            this._updateRegionIdle = 0;
+        }
         let primary = this._primaryMonitor;
         if (!primary) return false;
 
-        let rects = [], struts = [], i;
-
-        if (this._updateRegionIdle) {
-            Mainloop.source_remove(this._updateRegionIdle);
-            this._updateRegionIdle = 0;
-        }
-
+        let struts = [], rects = [];
         if (!primary.inFullscreen) {
-            for (i = 0; i < this._trackedActors.length; i++) {
+            for (let i = 0, iMax = this._trackedActors.length; i < iMax; ++i) {
                 let actorData = this._trackedActors[i];
                 if (!actorData.affectsInputRegion && !actorData.affectsStruts)
                     continue;
@@ -918,8 +921,12 @@ Chrome.prototype = {
                 }
 
                 let strutRect = new Meta.Rectangle({ x: x1, y: y1, width: x2 - x1, height: y2 - y1});
-                let strut = new Meta.Strut({ rect: strutRect, side: side });
-                struts.push(strut);
+                if (strutRect.width <= 0 || strutRect.height <= 0 ) {
+                    global.logError("bad strut: " + [x1, x2, y1, y2].join(", "));
+                } else {
+                    let strut = new Meta.Strut({ rect: strutRect, side: side });
+                    struts.push(strut);
+                }
             }
         }
 
