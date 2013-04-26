@@ -283,9 +283,7 @@ AppMenuButton.prototype = {
         this._spinner = new Panel.AnimatedIcon('process-working.svg', PANEL_ICON_SIZE);
         this._container.add_actor(this._spinner.actor);
         this._spinner.actor.lower_bottom();
-
-        let tracker = Cinnamon.WindowTracker.get_default();
-        this.app = tracker.get_window_app(this.metaWindow);
+        
         this.set_icon(panel_height);
         let title = this.getDisplayTitle();
         if (metaWindow.minimized)
@@ -386,7 +384,9 @@ AppMenuButton.prototype = {
 
     getDisplayTitle: function() {
         let title = this.metaWindow.get_title();
-        if (!title) title = this.app ? this.app.get_name() : '?';
+        let tracker = Cinnamon.WindowTracker.get_default();
+        let app = tracker.get_window_app(this.metaWindow);
+        if (!title) title = app ? app.get_name() : '?';
         return title;
     },
 
@@ -638,9 +638,11 @@ AppMenuButton.prototype = {
             Math.round(panel_height * ICON_HEIGHT_FACTOR) :
             DEFAULT_ICON_SIZE;
         if (iconSize != this.iconSize) {
+            let tracker = Cinnamon.WindowTracker.get_default();
+            let app = tracker.get_window_app(this.metaWindow);
             this.iconSize = iconSize;
-            let icon = this.app ?
-                this.app.create_icon_texture(this.iconSize) :
+            let icon = app ?
+                app.create_icon_texture(this.iconSize) :
                 new St.Icon({ icon_name: 'application-default-icon',
                              icon_type: St.IconType.FULLCOLOR,
                              icon_size: this.iconSize });
@@ -938,9 +940,9 @@ MyApplet.prototype = {
         }
     },
 
-    _onFocus: function() {
+    _onFocus: function() {        
         for ( let i = 0; i < this._windows.length; ++i ) {
-            let window = this._windows[i];
+            let window = this._windows[i];                        
             window.set_icon(this._panelHeight);
             window.doFocus();
         }
