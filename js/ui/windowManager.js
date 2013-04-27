@@ -913,8 +913,8 @@ WindowManager.prototype = {
     _showWorkspaceGrid : function(guardian) {
         if (this.showingOsdGrid) { return;}
 
-        const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1)";
-        const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9)";
+        const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1); border-radius:0";
+        const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9); border-radius:0";
         let activeWsIndex = global.screen.get_active_workspace_index();
         let [columnCount, rowCount] = Main.getWorkspaceGeometry();
 
@@ -930,7 +930,7 @@ WindowManager.prototype = {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
             let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
-            dialogLayout.style = "padding: 4px";
+            dialogLayout.style = "padding: 4px; border-radius:0";
             osd.add_actor(dialogLayout);
 
             let cells = [];
