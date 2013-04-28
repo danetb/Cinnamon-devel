@@ -1046,6 +1046,7 @@ WindowManager.prototype = {
         let showing = false;
         let timestamp = global.get_current_time(); // need to grab a valid timestamp now
 
+        let isMultiRows = Main.getWorkspaceGeometry()[1] > 1;
         let onKeyPressRelease = function(actor_unused, event, pressEvent, timeout) {
             let prolongedKeyPress = false;
             if (!timeout) {
@@ -1065,7 +1066,7 @@ WindowManager.prototype = {
                         showing = true;
                     }
                     if (bindingName == 'switch-to-workspace-up') {
-                        if (!prolongedKeyPress) {
+                        if (!prolongedKeyPress || (!pressEvent && !isMultiRows)) {
                             cleanup();
                             if (fromModal) {
                                 Main.overview.hide();
@@ -1074,12 +1075,12 @@ WindowManager.prototype = {
                                 Main.expo.toggle();
                             }
                         }
-                        else {
+                        else if (isMultiRows) {
                            this.actionMoveWorkspaceUp(timestamp);
                         }
                     }
                     if (bindingName == 'switch-to-workspace-down') {
-                        if (!prolongedKeyPress) {
+                        if (!prolongedKeyPress || (!pressEvent && !isMultiRows)) {
                             cleanup();
                             if (fromModal) {
                                 Main.overview.hide();
@@ -1088,7 +1089,7 @@ WindowManager.prototype = {
                                 Main.overview.toggle();
                             }
                         }
-                        else {
+                        else if (isMultiRows) {
                            this.actionMoveWorkspaceDown(timestamp);
                         }
                     }
