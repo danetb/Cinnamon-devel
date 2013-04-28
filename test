@@ -2,6 +2,7 @@
 
 rm -rf /usr/share/cinnamon/js-backup
 mv /usr/share/cinnamon/js /usr/share/cinnamon/js-backup
+cp js/misc/config.js /usr/share/cinnamon
 cp -R js /usr/share/cinnamon/
 
 rm -rf /usr/share/cinnamon/theme-backup
