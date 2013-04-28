@@ -441,11 +441,14 @@ ExpoWorkspaceThumbnail.prototype = {
                                      can_focus: true });                
         this.title._spacing = 0; 
         this.titleText = this.title.clutter_text;        
-        this.titleText.connect('key-press-event', Lang.bind(this, this.onTitleKeyPressEvent)); 
+        this.titleText.connect('key-release-event', Lang.bind(this, this.onTitleKeyPressReleaseEvent, false)); 
+        this.titleText.connect('key-press-event', Lang.bind(this, this.onTitleKeyPressReleaseEvent, true)); 
         this.titleText.connect('key-focus-in', Lang.bind(this, function() {
+            this.editingTitle = true;
             this.origTitle = Main.getWorkspaceName(this.metaWorkspace.index());
         })); 
         this.titleText.connect('key-focus-out', Lang.bind(this, function() {
+            this.editingTitle = false;
             if (this.doomed) {
                 // user probably deleted workspace while editing
                 global.stage.set_key_focus(this.box.actor);
@@ -563,7 +566,10 @@ ExpoWorkspaceThumbnail.prototype = {
         }
     },
     
-    onTitleKeyPressEvent: function(actor, event) {
+    onTitleKeyPressReleaseEvent: function(actor, event, pressed) {
+        if (pressed) {
+            return false;
+        }
         this.undoTitleEdit = false;
         let symbol = event.get_key_symbol();
         if (symbol === Clutter.Return || symbol === Clutter.Escape) {
@@ -573,7 +579,7 @@ ExpoWorkspaceThumbnail.prototype = {
             global.stage.set_key_focus(this.actor);
             return true;
         }
-        return false;     
+        return false;
     },
    
     activateWorkspace: function() {
@@ -1172,6 +1178,9 @@ ExpoThumbnailsBox.prototype = {
             }));
         }));
 
+        this.actor.connect('key-press-event', Lang.bind(this, this.handleKeyPressReleaseEvent, true));
+        this.actor.connect('key-release-event', Lang.bind(this, this.handleKeyPressReleaseEvent, false));
+
         this.actor.connect('button-release-event', Lang.bind(this, function(actor, event) {
             if (Cinnamon.get_event_state(event) & Clutter.ModifierType.BUTTON2_MASK) {
                 this.toggleGlobalOverviewMode();
@@ -1283,10 +1292,17 @@ ExpoThumbnailsBox.prototype = {
     },
 
     handleKeyPressReleaseEvent: function(actor, event, pressed) {
+        if (this.kbThumbnailIndex >= 0 && this.thumbnails[this.kbThumbnailIndex].editingTitle) {
+            return false;
+        }
         let modifiers = Cinnamon.get_event_state(event);
         let ctrlAltMask = Clutter.ModifierType.CONTROL_MASK | Clutter.ModifierType.MOD1_MASK;
         let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
         let symbol = event.get_key_symbol();
+        let inserting = (symbol === Clutter.plus || symbol === Clutter.Insert) && !ctrlDown;
+        let deleting = (symbol === Clutter.Delete && (modifiers & ctrlAltMask) !== ctrlAltMask)
+            || symbol === Clutter.w && modifiers & Clutter.ModifierType.CONTROL_MASK;
+
         if (pressed) {
             if ((symbol === Clutter.plus && ctrlDown)) {
                 this.adjustZoom('more-zoom');
@@ -1296,8 +1312,38 @@ ExpoThumbnailsBox.prototype = {
                 this.adjustZoom('less-zoom');
                 return true;
             }
+            if (inserting) {
+                this._workspaceOperationPending = true;
+            }
+            if (deleting)
+            {
+                this._workspaceOperationPending = true;
+            }
         }
         else if (!pressed) { // released
+            if (symbol === Clutter.Escape) {
+                if (!this._workspaceOperationPending) {
+                    Main.expo.hide();
+                }
+                this._workspaceOperationPending = false;
+                return true;
+            }
+            if (inserting) {
+                if (this._workspaceOperationPending) {
+                    this._workspaceOperationPending = false;
+                    Main._addWorkspace();
+                }
+                return true;
+            }
+            if (deleting)
+            {
+                if (this._workspaceOperationPending) {
+                    this._workspaceOperationPending = false;
+                    this.removeSelectedWorkspace();
+                }
+                return true;
+            }
+
             if (symbol === Clutter.Return || symbol === Clutter.KEY_space 
                 || symbol === Clutter.KP_Enter)
             {

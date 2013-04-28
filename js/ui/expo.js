@@ -111,63 +111,6 @@ Expo.prototype = {
         this._coverPane.hide();
         this._addWorkspaceButton.hide();
         this._windowCloseArea.hide();
-
-        let onKeyPressRelease = function(actor, event, pressed) {
-            if (this._shown) {
-                let symbol = event.get_key_symbol();
-                let modifiers = Cinnamon.get_event_state(event);
-                let ctrlAltMask = Clutter.ModifierType.CONTROL_MASK | Clutter.ModifierType.MOD1_MASK;
-                let ctrlDown = modifiers & Clutter.ModifierType.CONTROL_MASK;
-
-                let inserting = (symbol === Clutter.plus || symbol === Clutter.Insert) && !ctrlDown;
-                let deleting = (symbol === Clutter.Delete && (modifiers & ctrlAltMask) !== ctrlAltMask)
-                        || symbol === Clutter.w && modifiers & Clutter.ModifierType.CONTROL_MASK
-                if (pressed) {
-                    if (this._expo.handleKeyPressReleaseEvent(actor, event, pressed)) {
-                        return true;
-                    }
-                    if (inserting) {
-                        this._workspaceOperationPending = true;
-                    }
-                    if (deleting)
-                    {
-                        this._workspaceOperationPending = true;
-                    }
-                    if (symbol === Clutter.Escape) {
-                        if (!this._workspaceOperationPending) {
-                            this.hide();
-                        }
-                        this._workspaceOperationPending = false;
-                        return true;
-                    }
-
-                }
-                else if (!pressed) { // released
-                    if (this._expo.handleKeyPressReleaseEvent(actor, event, pressed)) {
-                        return true;
-                    }
-                    if (inserting) {
-                        if (this._workspaceOperationPending) {
-                            this._workspaceOperationPending = false;
-                            Main._addWorkspace();
-                        }
-                        return true;
-                    }
-                    if (deleting)
-                    {
-                        if (this._workspaceOperationPending) {
-                            this._workspaceOperationPending = false;
-                            this._expo.removeSelectedWorkspace();
-                        }
-                        return true;
-                    }
-                }
-            }
-            return false;
-        };
-        this._group.connect('key-press-event', Lang.bind(this, onKeyPressRelease, true));
-        this._group.connect('key-release-event', Lang.bind(this, onKeyPressRelease, false));
-
         this._expo = new ExpoThumbnail.ExpoThumbnailsBox();
         this._group.add_actor(this._expo.actor);
         this._relayout();
