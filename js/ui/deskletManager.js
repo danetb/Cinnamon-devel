@@ -23,7 +23,7 @@ var enabledDeskletDefinitions;
 
 let userDeskletsDir;
 
-let dummyMetaWindow = null; // new Meta.Window();
+let dummyMetaWindow = new Meta.Window();
 let mouseTrackEnabled = false;
 let mouseTrackTimoutId = null;
 
