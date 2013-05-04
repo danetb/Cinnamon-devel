@@ -239,11 +239,11 @@ LayoutManager.prototype = {
             panel._setPanelHeight(panelHeight, panelScalable);
             let wasHideable = panel.isHideable();
             panel.setHideable(global.settings.get_boolean(index == 0 ? "panel-autohide" : "panel2-autohide"));
+            if (wasHideable) {
+                panel._showPanel();
+            }
             if (panel.isHideable()) {
                 panel._hidePanel();
-            }
-            else if (wasHideable) {
-                panel._showPanel();
             }
         }, this);
         this._updateBoxes();
