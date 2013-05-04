@@ -906,9 +906,11 @@ Panel.prototype = {
     _clearTimers: function() {
         if (this._showTimer) {
             Mainloop.source_remove(this._showTimer);
+            this._showTimer = null;
         }
         if (this._hideTimer) {
             Mainloop.source_remove(this._hideTimer);
+            this._hideTimer = null;
         }
     },
     
