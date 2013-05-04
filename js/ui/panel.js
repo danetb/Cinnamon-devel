@@ -678,6 +678,7 @@ Panel.prototype = {
     },
 
     handleDragOver : function(source, actor, x, y, time) {
+        this._showPanel();
         // the default is to allow drop
         return DND.DragMotionResult.MOVE_DROP;
     },
