@@ -87,7 +87,7 @@ class Spice_Harvester:
 
         self.progresslabel = self.builder.get_object('progresslabel')
         self.progressbar = self.builder.get_object("progressbar")
-        self.progressbar.set_text(_(''))
+        self.progressbar.set_text('')
         self.progressbar.set_fraction(0)
 
         self.progress_window.set_title("")
@@ -334,7 +334,7 @@ class Spice_Harvester:
                 trash.append(f)
         for t in trash:
             try:
-                os.remove(t)
+                os.remove(os.path.join(self.cache_folder, t))
             except:
                 pass
 
