@@ -93,7 +93,8 @@ ExpoWindowClone.prototype = {
         this.actor._delegate = this;
         this.realWindow = realWindow;
         this.metaWindow = realWindow.meta_window;
-        
+        this.refreshClone();
+
         this.connector = new Connector.Connector();
         // the "real" window has a different life cycle, so it needs a special connector
         this.realWindowConnector = new Connector.Connector();
@@ -102,6 +103,7 @@ ExpoWindowClone.prototype = {
             Lang.bind(this, this.onPositionChanged));
         this.realWindowConnector.addConnection(this.realWindow, 'position-changed',
             Lang.bind(this, this.onSizeChanged));
+
         let orphaned = false;
         this.realWindowConnector.addConnection(this.realWindow, 'destroy', Lang.bind(this, function() {
             this.orphaned = true;
