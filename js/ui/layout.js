@@ -92,10 +92,10 @@ LayoutManager.prototype = {
         let parse = Lang.bind(this, function(layoutString) {
             layoutString.trim().split('+').forEach(function(panelString, index) {
                 let panelOpts = panelString.trim().split(',');
-                let isBottom = !panelOpts[0] || panelOpts[0] != 'top';
+                let isTop = panelOpts[0] && panelOpts[0] == 'top';
                 // we use strings to designate monitors, since the actual index may
                 // change if monitors are rearranged during a session
-                let monitorIndex = isBottom ? "bottomIndex" : "topIndex"
+                let monitorIndex = isTop ? "topIndex" : "bottomIndex"
                 let monitor = panelOpts.length > 1 ? panelOpts[1] : null;
                 if (monitor) {
                     switch (monitor) {
@@ -112,7 +112,7 @@ LayoutManager.prototype = {
                     }
                 }
                 panelData.push({
-                    isBottom: isBottom,
+                    isBottom: !isTop,
                     monitorIndex: monitorIndex
                 });
             }, this);
