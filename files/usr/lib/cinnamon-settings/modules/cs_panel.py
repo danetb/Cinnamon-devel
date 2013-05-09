@@ -12,7 +12,7 @@ class Module:
         self.category = "prefs"
 
         desktop_layouts = [["traditional", _("Bottom")], ["flipped", _("Top")], ["classic", _("Top + bottom")], ["classic-gold", _("Bottom + top")]]
-        desktop_layouts_combo = GSettingsComboBox(_("Panel layout"), "org.cinnamon", "desktop-panel-layout", None, desktop_layouts)
+        desktop_layouts_combo = GSettingsComboBox(_("Panel layout"), "org.cinnamon", "desktop-layout", None, desktop_layouts)
         sidePage.add_widget(desktop_layouts_combo) 
         label = Gtk.Label()
         label.set_markup("<i><small>%s</small></i>" % _("Note: If you change the layout you will need to restart Cinnamon for the change to take effect."))

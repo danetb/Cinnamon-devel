@@ -292,20 +292,25 @@
     </key>
 
      <key name="desktop-panel-layout" type="s">
-      <default>"traditional"</default>
-      <_summary>Panel-layout style</_summary>
+      <default>"bottom,bottom"</default>
+      <_summary>Panel-layout style (deprecated)</_summary>
       <_description>
-       Layout styles: "traditional" (a single panel at the bottom), "flipped" (a single panel at the top),
-       "classic" (main panel at the top, secondary panel at the bottom), "classic-gold" (main panel at the bottom, secondary panel at the top)
+      Deprecated, retained for backward compatibility. Current versions of Cinnamon use "desktop-layout".
       </_description>
     </key>
-    
-    <key name="desktop-layout" type="s">
-      <default>"traditional"</default>
-      <_summary>Layout style</_summary>
+
+     <key name="desktop-layout" type="s">
+      <default>"bottom,bottom"</default>
+      <_summary>Panel-layout style</_summary>
       <_description>
-      Deprecated, retained for backward compatibility. New versions of Cinnamon use "desktop-panel-layout".
-       Layout styles: traditional (1 panel at the bottom), flipped (1 panel on top), classic (1 panel on top, 1 panel at the bottom)
+      Panels are described using a comma-separated list. Multiple panel descriptions are separated by ':'.
+      Valid values for "placement": "bottom", "top". Mandatory.
+      Valid values for "monitor": "bottom", "top", "left", "right". Optional.
+
+      For backward compatibility, the following layout strings are also supported:
+        "traditional": 1 panel at the bottom. Maps to "bottom,bottom".
+        "flipped": 1 panel at the top. Maps to "top,top".
+        "classic": 1 panel on top, 1 secondary panel at the bottom. Maps to "top,top+bottom,bottom").
       </_description>
     </key>
     

@@ -69,7 +69,7 @@ LayoutManager.prototype = {
         this.setupDesktopLayout = null; // don't call again
 
         this._applet_side = St.Side.BOTTOM;
-        this._desktop_layout = global.settings.get_string("desktop-panel-layout");
+        this._desktop_layout = global.settings.get_string("desktop-layout");
         let newLayoutString = "";
         
         if (this._desktop_layout == "flipped") {
