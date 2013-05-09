@@ -45,7 +45,6 @@ LayoutManager.prototype = {
 
         this.setupDesktopLayout();
         this._monitorsChanged();
-        this._processPanelSettings();
 
         global.settings.connect("changed::enable-edge-flip", Lang.bind(this, this._onEdgeFlipChanged));
         global.settings.connect("changed::edge-flip-delay", Lang.bind(this, this._onEdgeFlipChanged));
@@ -56,13 +55,8 @@ LayoutManager.prototype = {
         global.settings.connect("changed::panel-bottom-height", Lang.bind(this, this._processPanelSettings));
         global.settings.connect("changed::panel-top-height", Lang.bind(this, this._processPanelSettings));
         global.screen.connect('restacked', Lang.bind(this, this._windowsRestacked));
-        global.screen.connect('monitors-changed', Lang.bind(this, function() {
-            // Try to avoid Cinnamon crashing when an external monitor is added,
-            // by deferring the work a few precious seconds.
-            Mainloop.timeout_add(3000, Lang.bind(this, this._monitorsChanged));
-        }));
-        global.window_manager.connect('switch-workspace',
-                                      Lang.bind(this, this._windowsRestacked));
+        global.screen.connect('monitors-changed', Lang.bind(this, this._monitorsChanged));
+        global.window_manager.connect('switch-workspace', Lang.bind(this, this._windowsRestacked));
     },
 
     setupDesktopLayout: function() {
@@ -309,6 +303,7 @@ LayoutManager.prototype = {
     _monitorsChanged: function() {
         this._updateMonitors();
         this._updateBoxes();
+        this._processPanelSettings();
         this.emit('monitors-changed');
     },
 
