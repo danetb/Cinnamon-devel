@@ -68,17 +68,13 @@ LayoutManager.prototype = {
         
         if (this._desktop_layout == "flipped") {
             newLayoutString = "top,top";
-        }
-        else if (this._desktop_layout == "traditional") {
+        } else if (this._desktop_layout == "traditional") {
             newLayoutString = "bottom,bottom";
-        }
-        else if (this._desktop_layout == "classic") {
+        } else if (this._desktop_layout == "classic") {
             newLayoutString = "top,top+bottom,bottom";
-        }
-        else if (this._desktop_layout == "classic-gold") {
+        } else if (this._desktop_layout == "classic-gold") {
             newLayoutString = "bottom,bottom+top,top";
-        }
-        else {
+        } else {
             newLayoutString = this._desktop_layout; // could be a data string
         }
         
@@ -114,23 +110,25 @@ LayoutManager.prototype = {
         });
 
         if (!parse(newLayoutString)) {
+            global.logError("Could not parse desktop-layout: '" + newLayoutString + "'");
             parse("bottom,bottom"); // this should work if all else fails
         }
 
-        panelData.forEach(function(data, index) {
-            let isPrimary = index == 0;
+        // create panels in reverse order, so the primary panel is always top-most, in case of overlap
+        panelData.slice().reverse().forEach(function(data, index) {
+            let isPrimary = data == panelData[0];
             if (isPrimary) {
                 this._applet_side = data.isBottom ? St.Side.BOTTOM : St.Side.TOP;
             }
             let box = new St.BoxLayout({ name: 'panelBox', vertical: true });
             this.addChrome(box, { addToWindowgroup: false });
-            this._panelBoxes.push(box);
+            this._panelBoxes.unshift(box); // use unshift to maintain correct order
 
             let panel = new Panel.Panel(this, data.isBottom, isPrimary);
             box.add(panel.actor);
             box._panelData = data;
             panel.connect('style-changed', Lang.bind(this, this._processPanelSettings));
-            this._panels.push(panel);
+            this._panels.unshift(panel);
         }, this);
     },
 

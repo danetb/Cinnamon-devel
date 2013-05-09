@@ -310,7 +310,8 @@
       For backward compatibility, the following layout strings are also supported:
         "traditional": 1 panel at the bottom. Maps to "bottom,bottom".
         "flipped": 1 panel at the top. Maps to "top,top".
-        "classic": 1 panel on top, 1 secondary panel at the bottom. Maps to "top,top+bottom,bottom").
+        "classic": 1 panel at the top, 1 secondary panel at the bottom. Maps to "top,top+bottom,bottom").
+        "classic-gold": 1 panel at the bottom, 1 secondary panel at the top. Maps to "bottom,bottom+top,top").
       </_description>
     </key>
     
