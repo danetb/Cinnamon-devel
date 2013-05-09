@@ -252,6 +252,8 @@ LayoutManager.prototype = {
         this.primaryIndex = this.bottomIndex = this.topIndex = this.leftIndex = this.rightIndex = screen.get_primary_monitor();
         // If there are monitors below the primary, then we need
         // to split primary from bottom.
+        // If there are monitors beside the primary, then we need
+        // to split left from right.
         for (let i = 0; i < this.monitors.length; i++) {
             let monitor = this.monitors[i];
             if (this._isAboveOrBelowPrimary(monitor)) {
@@ -270,6 +272,8 @@ LayoutManager.prototype = {
         this.primaryMonitor = this.monitors[this.primaryIndex];
         this.bottomMonitor = this.monitors[this.bottomIndex];
         this.topMonitor = this.monitors[this.topIndex];
+        this.rightMonitor = this.monitors[this.rightIndex];
+        this.leftMonitor = this.monitors[this.leftIndex];
     },
 
     _updateHotCorners: function() {
