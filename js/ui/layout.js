@@ -60,7 +60,7 @@ LayoutManager.prototype = {
     },
 
     setupDesktopLayout: function() {
-        this.setupDesktopLayout = null; // don't call again
+        delete this.setupDesktopLayout; // don't call again
 
         this._applet_side = St.Side.BOTTOM;
         this._desktop_layout = global.settings.get_string("desktop-layout");
@@ -238,7 +238,7 @@ LayoutManager.prototype = {
                 panel._hidePanel();
             }
         }, this);
-        this._updateBoxes();
+        this._updatePanelBoxes();
     },
     
     _updateMonitors: function() {
@@ -274,6 +274,12 @@ LayoutManager.prototype = {
         this.topMonitor = this.monitors[this.topIndex];
         this.rightMonitor = this.monitors[this.rightIndex];
         this.leftMonitor = this.monitors[this.leftIndex];
+
+        this._panelBoxes.forEach(function(box, index) {
+            let panel = this._panels[index];
+            let monitor = this._getMonitor(box._panelData.monitorIndex);
+            panel.setCurrentMonitor(monitor);
+        }, this);
     },
 
     _updateHotCorners: function() {
@@ -287,18 +293,18 @@ LayoutManager.prototype = {
 
     _updateBoxes: function() {
         this._updateHotCorners();
+        this._updatePanelBoxes();
+        this.keyboardBox.set_position(this.bottomMonitor.x, this.bottomMonitor.y + this.bottomMonitor.height);
+        this.keyboardBox.set_size(this.bottomMonitor.width, -1);
+        this._chrome._queueUpdateRegions();
+    },
 
+    _updatePanelBoxes: function() {
         this._panelBoxes.forEach(function(box, index) {
             let panel = this._panels[index];
-            let monitor = this._getMonitor(box._panelData.monitorIndex);
-            panel.setCurrentMonitor(monitor);
             panel._updateBoxPosition(box);
             this._chrome.modifyActorParams(box, { affectsStruts: !panel.isHideable() });
         }, this);
-
-        this.keyboardBox.set_position(this.bottomMonitor.x,
-                                      this.bottomMonitor.y + this.bottomMonitor.height);
-        this.keyboardBox.set_size(this.bottomMonitor.width, -1);
         this._chrome._queueUpdateRegions();
     },
 
