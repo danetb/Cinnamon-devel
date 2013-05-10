@@ -221,12 +221,7 @@ LayoutManager.prototype = {
         this._panels.forEach(function(panel, index) {
             let panelHeight = null;
             if (panelResizable) {
-                if (panel.bottomPosition) {
-                    panelHeight = global.settings.get_int("panel-bottom-height");
-                }
-                else {
-                    panelHeight = global.settings.get_int("panel-top-height");
-                }
+                panelHeight = global.settings.get_int(panel.bottomPosition ? "panel-bottom-height" : "panel-top-height");
             }
             panel._setPanelHeight(panelHeight, panelScalable);
             let wasHideable = panel.isHideable();
@@ -337,13 +332,10 @@ LayoutManager.prototype = {
         let monitorLeft = monitor.x, monitorRight = monitor.x + monitor.width;
         let primaryLeft = primary.x, primaryRight = primary.x + primary.width;
 
-        if ((monitorLeft >= primaryLeft && monitorLeft < primaryRight) ||
+        return ((monitorLeft >= primaryLeft && monitorLeft < primaryRight) ||
             (monitorRight > primaryLeft && monitorRight <= primaryRight) ||
             (primaryLeft >= monitorLeft && primaryLeft < monitorRight) ||
-            (primaryRight > monitorLeft && primaryRight <= monitorRight))
-            return true;
-
-        return false;
+            (primaryRight > monitorLeft && primaryRight <= monitorRight));
     },
 
     get focusIndex() {
@@ -357,7 +349,9 @@ LayoutManager.prototype = {
                 if (monitor.x <= wrect.x && monitor.y <= wrect.y &&
                     monitor.x + monitor.width > wrect.x &&
                     monitor.y + monitor.height > wrect.y)
+                {
                     return i;
+                }
             }
         }
 
@@ -849,9 +843,8 @@ Chrome.prototype = {
     },
 
     updateRegions: function() {
-        if (this._updateRegionIdle) {
-            this._updateRegionIdle = 0;
-        }
+        this._updateRegionIdle = 0;
+
         let primary = this._primaryMonitor;
         if (!primary) return false;
 
