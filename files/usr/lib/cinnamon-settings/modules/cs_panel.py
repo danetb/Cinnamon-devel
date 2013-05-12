@@ -11,7 +11,7 @@ class Module:
         self.name = "panel"
         self.category = "prefs"
 
-        desktop_layouts = [["traditional", _("Bottom")], ["flipped", _("Top")], ["classic", _("Top + bottom")], ["classic-gold", _("Bottom + top")]]
+        desktop_layouts = [["bottom", _("Bottom")], ["top", _("Top")], ["top+bottom", _("Top + bottom")], ["bottom+top", _("Bottom + top")], ["bottom,left+bottom,right", _("Two panels side by side, bottom")], ["top,left+top,right", _("Two panels side by side, top")]]
         desktop_layouts_combo = GSettingsComboBox(_("Panel layout"), "org.cinnamon", "desktop-layout", None, desktop_layouts)
         sidePage.add_widget(desktop_layouts_combo) 
         label = Gtk.Label()
