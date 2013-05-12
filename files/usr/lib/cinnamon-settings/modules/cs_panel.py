@@ -16,7 +16,7 @@ class Module:
         sidePage.add_widget(desktop_layouts_combo) 
         label = Gtk.Label()
         label.set_markup("<i><small>%s</small></i>" % _("Note: If you change the layout you will need to restart Cinnamon for the change to take effect."))
-        sidePage.add_widget(label, True)
+        sidePage.add_widget(label)
 
         sidePage.add_widget(GSettingsCheckButton(_("Auto-hide main panel"), "org.cinnamon", "panel-autohide", None))
         box = IndentedHBox()
