@@ -245,7 +245,7 @@ LayoutManager.prototype = {
         for (let i = 0; i < nMonitors; i++) {
             let monitor = screen.get_monitor_geometry(i);
             this.monitors.push(monitor);
-            monitorPanels[monitor] = {top: false, bottom:false};
+            monitorPanels[i] = {top: false, bottom:false};
         }
         this.primaryIndex = this.bottomIndex = this.topIndex = this.leftIndex = this.rightIndex = screen.get_primary_monitor();
         // If there are monitors below the primary, then we need
@@ -277,20 +277,22 @@ LayoutManager.prototype = {
             let panel = this._panels[index];
             let monitor = this._getMonitor(box._panelData.monitorIndex);
             panel.setCurrentMonitor(monitor);
-            if (monitorPanels[monitor].top && !box._panelData.isBottom) {
+
+            let mp = monitorPanels[this.monitors.indexOf(monitor)];
+            if (mp.top && !box._panelData.isBottom) {
                 global.logError("top panel collision");
-                if (!monitorPanels[monitor].bottom) {
+                if (!mp.bottom) {
                     panel.bottomPosition = box._panelData.isBottom = true;
                 }
             }
-            if (monitorPanels[monitor].bottom && box._panelData.isBottom) {
+            if (mp.bottom && box._panelData.isBottom) {
                 global.logError("bottom panel collision");
-                if (!monitorPanels[monitor].top) {
+                if (!mp.top) {
                     panel.bottomPosition = box._panelData.isBottom = false;
                 }
             }
-            monitorPanels[monitor].top = !box._panelData.isBottom;
-            monitorPanels[monitor].bottom = box._panelData.isBottom;
+            mp.top = !box._panelData.isBottom;
+            mp.bottom = box._panelData.isBottom;
         }, this);
     },
 
