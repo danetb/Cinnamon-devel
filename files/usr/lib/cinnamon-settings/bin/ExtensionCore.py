@@ -32,6 +32,8 @@ SETTING_TYPE_NONE = 0
 SETTING_TYPE_INTERNAL = 1
 SETTING_TYPE_EXTERNAL = 2
 
+ROW_SIZE = 32
+
 class ExtensionSidePage (SidePage):
     SORT_NAME = 0
     SORT_RATING = 1
@@ -62,7 +64,7 @@ class ExtensionSidePage (SidePage):
         
         self.search_entry = Gtk.Entry()
         self.search_entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'edit-find')
-        self.search_entry.set_placeholder_text(_("Search %s") % (self.pl_noun))
+        self.search_entry.set_placeholder_text(_("Search %s").decode("utf-8") % (self.pl_noun))
         self.search_entry.connect('changed', self.on_entry_refilter)
 
         self.notebook.append_page(extensions_vbox, Gtk.Label(_("Installed")))
@@ -140,20 +142,20 @@ class ExtensionSidePage (SidePage):
             self.instanceButton = Gtk.Button(_("Apply theme"))
         self.instanceButton.connect("clicked", lambda x: self._add_another_instance())
         if self.collection_type in ("desklet", "applet"):
-            self.instanceButton.set_tooltip_text(_("Some %s can be added multiple times.\nUse this to add another instance. Use panel edit mode to remove a single instance.") % (self.pl_noun))
+            self.instanceButton.set_tooltip_text(_("Some %s can be added multiple times.\n Use this to add another instance. Use panel edit mode to remove a single instance.").decode("utf-8") % (self.pl_noun))
         elif self.collection_type == "extension":
-            self.instanceButton.set_tooltip_text(_("Click to enable this %s") % (self.noun))
+            self.instanceButton.set_tooltip_text(_("Click to enable this %s").decode("utf-8") % (self.noun))
         else:
-            self.instanceButton.set_tooltip_text(_("Click to apply this %s") % (self.noun))
+            self.instanceButton.set_tooltip_text(_("Click to apply this %s").decode("utf-8") % (self.noun))
         self.instanceButton.set_sensitive(False);
 
         self.configureButton = Gtk.Button(_("Configure"))
         self.configureButton.connect("clicked", self._configure_extension)
-        self.configureButton.set_tooltip_text(_("Configure this %s") % (self.noun))
+        self.configureButton.set_tooltip_text(_("Configure this %s").decode("utf-8") % (self.noun))
 
         self.extConfigureButton = Gtk.Button(_("Configure"))
         self.extConfigureButton.connect("clicked", self._external_configure_launch)
-        self.extConfigureButton.set_tooltip_text(_("Configure this %s") % (self.noun))
+        self.extConfigureButton.set_tooltip_text(_("Configure this %s").decode("utf-8") % (self.noun))
 
         if not self.themes:
             restoreButton = Gtk.Button(_("Restore to default"))
@@ -166,9 +168,9 @@ class ExtensionSidePage (SidePage):
         renderer_text = Gtk.CellRendererText()
         self.comboshow.pack_start(renderer_text, True)
         showTypes=Gtk.ListStore(int, str)
-        showTypes.append([SHOW_ALL, _("All %s") % (self.pl_noun)])
-        showTypes.append([SHOW_ACTIVE, _("Active %s") % (self.pl_noun)])
-        showTypes.append([SHOW_INACTIVE, _("Inactive %s") % (self.pl_noun)])
+        showTypes.append([SHOW_ALL, _("All %s").decode("utf-8") % (self.pl_noun)])
+        showTypes.append([SHOW_ACTIVE, _("Active %s").decode("utf-8") % (self.pl_noun)])
+        showTypes.append([SHOW_INACTIVE, _("Inactive %s").decode("utf-8") % (self.pl_noun)])
         self.comboshow.set_model(showTypes)
         self.comboshow.set_entry_text_column(1)
         self.comboshow.set_active(0) #All
@@ -257,7 +259,7 @@ class ExtensionSidePage (SidePage):
         self.gm_search_entry = Gtk.Entry()
         self.gm_search_entry.connect('changed', self.gm_on_entry_refilter)
         self.gm_search_entry.set_icon_from_icon_name(Gtk.EntryIconPosition.PRIMARY, 'edit-find')
-        self.gm_search_entry.set_placeholder_text(_("Search %s") % (self.pl_noun))
+        self.gm_search_entry.set_placeholder_text(_("Search %s").decode("utf-8") % (self.pl_noun))
         hbox.pack_end(self.gm_search_entry, False, False, 4)
         self.search_entry.show()
         
@@ -331,7 +333,10 @@ class ExtensionSidePage (SidePage):
         buttonbox.set_spacing(6)
         self.install_button = Gtk.Button(_("  Install or update selected"))
         self.select_updated = Gtk.Button("  Select updated")
-        img = Gtk.Image.new_from_icon_name("update-notifier", Gtk.IconSize.BUTTON)
+
+        b, w, h = Gtk.icon_size_lookup(Gtk.IconSize.BUTTON)
+        pb = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/update.svg", w, h)
+        img = Gtk.Image.new_from_pixbuf(pb)
         self.select_updated.set_image(img)
         reload_button = Gtk.Button(_("Refresh list"))
         buttonbox.pack_start(self.install_button, False, False, 2)
@@ -388,7 +393,7 @@ class ExtensionSidePage (SidePage):
             iter = self.modelfilter.get_iter(path)
             if column.get_property('title')=="Read only" and iter != None:
                 if not self.modelfilter.get_value(iter, 6):
-                    tooltip.set_text(_("This %s is read-only, and cannot be uninstalled") % self.noun)
+                    tooltip.set_text(_("This %s is read-only, and cannot be uninstalled").decode("utf-8") % self.noun)
                     return True
                 else:
                     return False
@@ -396,7 +401,7 @@ class ExtensionSidePage (SidePage):
                 count = self.modelfilter.get_value(iter, 2)
                 markup = ""
                 if count > 0:
-                    markup += _("This %s is currently active.") % self.noun
+                    markup += _("This %s is currently active.").decode("utf-8") % self.noun
                     if count > 1:
                         markup += _("\n\nInstance count: %d") % count
                     tooltip.set_markup(markup)
@@ -414,9 +419,9 @@ class ExtensionSidePage (SidePage):
                 installed, can_update, is_active = self.version_compare(uuid, date)
                 if installed:
                     if can_update:
-                        tooltip.set_text(_("An update is available for this %s") % (self.noun))
+                        tooltip.set_text(_("An update is available for this %s").decode("utf-8") % (self.noun))
                     else:
-                        tooltip.set_text(_("This %s is installed and up-to-date") % (self.noun))
+                        tooltip.set_text(_("This %s is installed and up-to-date").decode("utf-8") % (self.noun))
                     return True
         return False
 
@@ -508,9 +513,12 @@ class ExtensionSidePage (SidePage):
     def _is_active_data_func(self, column, cell, model, iter, data=None):
         enabled = model.get_value(iter, 2) > 0
         if (enabled):
-            img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/running.png"))
+            if not self.themes:
+                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/running.svg", ROW_SIZE, ROW_SIZE)
+            else:
+                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/installed.svg", ROW_SIZE, ROW_SIZE)
         else:
-            img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/inactive.png"))        
+            img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/inactive.png", ROW_SIZE, ROW_SIZE)
         cell.set_property('pixbuf', img)
 
     def comboshow_changed(self, widget):
@@ -651,14 +659,14 @@ class ExtensionSidePage (SidePage):
 
         if installed:
             if can_update:
-                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/update.png"))
+                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/update.svg", ROW_SIZE, ROW_SIZE)
                 self.update_list[uuid] = True
             else:
-                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/installed.png"))
+                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/installed.svg", ROW_SIZE, ROW_SIZE)
                 if uuid in self.update_list.keys():
                     del self.update_list[uuid]
         else:
-            img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/inactive.png"))
+            img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/inactive.png", ROW_SIZE, ROW_SIZE)
             if uuid in self.update_list.keys():
                 del self.update_list[uuid]
 
@@ -747,6 +755,7 @@ class ExtensionSidePage (SidePage):
 
     def load_spices(self, force=False):
         # if self.spices.get_webkit_enabled():
+        self.update_list = {}
         self.spices.load(self.on_spice_load, force)
 
     def install_extensions(self):
@@ -760,7 +769,7 @@ class ExtensionSidePage (SidePage):
         self.install_list = []
         self.load_extensions()
         if need_restart:
-            self.show_info(_("One or more active %s may have been updated.  You probably need to restart Cinnamon for the changes to take effect") % (self.pl_noun))
+            self.show_info(_("One or more active %s may have been updated.  You probably need to restart Cinnamon for the changes to take effect").decode("utf-8") % (self.pl_noun))
 
     def on_spice_load(self, spicesData):
         #print "total spices loaded: %d" % len(spicesData)
@@ -780,8 +789,8 @@ class ExtensionSidePage (SidePage):
 
             if not self.themes:
                 icon_filename = os.path.basename(extensionData['icon'])
-                w = 32
-                h = 32
+                w = ROW_SIZE + 5
+                h = ROW_SIZE + 5
             else:
                 icon_filename = os.path.basename(extensionData['screenshot'])
                 w = -1
@@ -816,7 +825,7 @@ class ExtensionSidePage (SidePage):
     def disable_extension(self, uuid, name, checked):
 
         if (checked > 1):
-            msg = _("There are multiple instances of this %s, do you want to remove them all?\n\n") % (self.noun)
+            msg = _("There are multiple instances of this %s, do you want to remove them all?\n\n").decode("utf-8") % (self.noun)
             msg += self.RemoveString
 
             if not self.show_prompt(msg):
@@ -923,9 +932,9 @@ class ExtensionSidePage (SidePage):
         num = len(self.update_list)
         if num > 0:
             if num > 1:
-                self.select_updated.set_label(_("  %d updates available!") % (len(self.update_list)))
+                self.select_updated.set_label(_("%d updates available!") % (len(self.update_list)))
             else:
-                self.select_updated.set_label(_("  %d update available!") % (len(self.update_list)))
+                self.select_updated.set_label(_("%d update available!") % (len(self.update_list)))
             self.select_updated.show()
             self.select_updated.get_property('image').show()
         else:
@@ -943,20 +952,20 @@ class ExtensionSidePage (SidePage):
         model, treeiter = self.treeview.get_selection().get_selected()
         enabled = False;
         if self.collection_type in ("applet", "desklet"):
-            tip = _("Some %s can be added multiple times.\nUse this to add another instance. Use panel edit mode to remove a single instance.") % (self.pl_noun)
+            tip = _("Some %s can be added multiple times.\nUse this to add another instance. Use panel edit mode to remove a single instance.").decode("utf-8") % (self.pl_noun)
         elif self.collection_type == "extension":
-            tip = _("Click to enable this %s") % (self.noun)
+            tip = _("Click to enable this %s").decode("utf-8") % (self.noun)
         else:
-            tip = _("Click to apply this %s") % (self.noun)
+            tip = _("Click to apply this %s").decode("utf-8") % (self.noun)
         if treeiter:
             checked = model.get_value(treeiter, 2);
             max_instances = model.get_value(treeiter, 3);
             enabled = max_instances > checked
             if self.collection_type in ("applet", "desklet"):
                 if max_instances == 1:
-                    tip += _("\nThis %s does not support multiple instances.") % (self.noun)
+                    tip += _("\nThis %s does not support multiple instances.").decode("utf-8") % (self.noun)
                 else:
-                    tip += _("\nThis %s supports max %d instances.") % (self.noun, max_instances)
+                    tip += _("\nThis %s supports max %d instances.").decode("utf-8") % (self.noun, max_instances)
         self.instanceButton.set_sensitive(enabled);
         self.instanceButton.set_tooltip_text(tip)
 
@@ -1095,12 +1104,12 @@ class ExtensionSidePage (SidePage):
                                     extension_icon = data["icon"]
                                     theme = Gtk.IconTheme.get_default()                                                    
                                     if theme.has_icon(extension_icon):
-                                        img = theme.load_icon(extension_icon, 32, 0)
+                                        img = theme.load_icon(extension_icon, ROW_SIZE, 0)
                                 elif os.path.exists("%s/%s/icon.png" % (directory, extension)):
-                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("%s/%s/icon.png" % (directory, extension), 32, 32)                            
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("%s/%s/icon.png" % (directory, extension), ROW_SIZE, ROW_SIZE)                            
                                 
                                 if img is None:                                                
-                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size( ("/usr/lib/cinnamon-settings/data/icons/%ss.svg") % (self.collection_type), 32, 32)
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size( ("/usr/lib/cinnamon-settings/data/icons/%ss.svg") % (self.collection_type), ROW_SIZE, ROW_SIZE)
                                                             
                                 self.model.set_value(iter, 4, img)
                                 self.model.set_value(iter, 5, extension_name)
@@ -1110,16 +1119,16 @@ class ExtensionSidePage (SidePage):
                                 self.model.set_value(iter, 9, long(last_edited))
 
                                 if (os.access(directory, os.W_OK)):
-                                    img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/user.png"))
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/user.png", ROW_SIZE, ROW_SIZE)
                                 else:
-                                    img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/system.png"))
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/system.svg", ROW_SIZE, ROW_SIZE)
 
                                 self.model.set_value(iter, 10, img)
 
                                 if (found):
-                                    img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/running.png"))
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/running.svg", ROW_SIZE, ROW_SIZE)
                                 else:
-                                    img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/inactive.png"))
+                                    img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/inactive.png", ROW_SIZE, ROW_SIZE)
 
                                 self.model.set_value(iter, 11, img)
                                 self.model.set_value(iter, 12, schema_filename)
@@ -1186,15 +1195,15 @@ class ExtensionSidePage (SidePage):
                             self.model.set_value(iter, 9, long(theme_last_edited))
 
                             if (os.access(directory, os.W_OK)):
-                                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/user.png"))
+                                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/user.png", ROW_SIZE, ROW_SIZE)
                             else:
-                                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/system.png"))
+                                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/system.svg", ROW_SIZE, ROW_SIZE)
 
                             self.model.set_value(iter, 10, img)
                             if (found):
-                                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/running.png"))
+                                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/installed.svg", ROW_SIZE, ROW_SIZE)
                             else:
-                                img = GdkPixbuf.Pixbuf.new_from_file( ("/usr/lib/cinnamon-settings/data/inactive.png"))
+                                img = GdkPixbuf.Pixbuf.new_from_file_at_size("/usr/lib/cinnamon-settings/data/inactive.png", ROW_SIZE, ROW_SIZE)
                             self.model.set_value(iter, 11, img)
                             self.model.set_value(iter, 13, SETTING_TYPE_NONE)
                     except Exception, detail:
