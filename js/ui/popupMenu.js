@@ -1240,6 +1240,7 @@ PopupMenu.prototype = {
         if (!this.isOpen)
             return;
             
+        this.isOpen = false;
         global.menuStackLength -= 1;
 
         Main.panel._hidePanel();
@@ -1250,8 +1251,6 @@ PopupMenu.prototype = {
             this._activeMenuItem.setActive(false);
 
         this._boxPointer.hide(animate);
-
-        this.isOpen = false;
         this.emit('open-state-changed', false);
     }
 };
