@@ -239,6 +239,7 @@ __proto__: ModalDialog.ModalDialog.prototype,
 
         this._completionBox = new St.Label({style_class: 'run-dialog-completion-box'});
         this.contentLayout.add(this._completionBox);
+        this._completionSelected = 0;
 
         this._errorBox = new St.BoxLayout({ style_class: 'run-dialog-error-box' });
 
@@ -320,6 +321,7 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 if (!this.inLaunchers) {
                     let text = o.get_text().trim();
                     if (text.length) {
+                        text = text.slice(0, text.lastIndexOf(o.get_selection()));
                         let prefix;
                         if (text.lastIndexOf(' ') == -1)
                             prefix = text;
@@ -332,11 +334,13 @@ __proto__: ModalDialog.ModalDialog.prototype,
                             if (postfix[postfix.length - 1] == '/')
                                 this._getCompletion(text + postfix + 'a');
                         }
-                        if (!postfix && completions.length > 0 && prefix.length > 2) {
-                            this._completionBox.set_text(completions.join("\n"));
-                            if (completions.length > 1) {
-                                this._completionBox.show();
+                        if (!postfix && completions.length > 1 && prefix.length > 2) {
+                            if (this._completionBox.visible) {
+                                this._completionSelected ++;
+                                this._completionSelected %= completions.length;
                             }
+                            this._showCompletions(completions, prefix.length);
+                            this._completionBox.show();
                         }
                     }
                     else {
@@ -376,12 +380,14 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 return false;
             }
             if (symbol == Clutter.BackSpace) {
+                this._completionSelected = 0;
                 this._completionBox.hide();
             }
             if (this._completionBox.get_text().trim().length > 0 &&
                 this._completionBox.visible) {
                 Mainloop.timeout_add(500, Lang.bind(this, function() { // Don't do it instantly to avoid "flashing"
                     let text = this._entryText.get_text();
+                    text = text.slice(0, text.lastIndexOf(this._entryText.get_selection()));
                     let prefix;
                     if (text.lastIndexOf(' ') == -1)
                         prefix = text;
@@ -389,7 +395,8 @@ __proto__: ModalDialog.ModalDialog.prototype,
                         prefix = text.substr(text.lastIndexOf(' ') + 1);
                     let [postfix, completions] = this._getCompletion(prefix);
                     if (completions.length > 1) {
-                        this._completionBox.set_text(completions.join("\n"));
+                        this._completionSelected = 0;
+                        this._showCompletions(completions, prefix.length);
                     }
                 }));
                 return false;
@@ -515,6 +522,20 @@ __proto__: ModalDialog.ModalDialog.prototype,
                 this._launcherMessage.set_text(this._launchers[this.iconIndex].title);
             }
         }
+    },
+
+    _showCompletions: function(completions, startpos) {
+        let text = "";
+        for (let i in completions) {
+            if (i == this._completionSelected) {
+                text = text + "<b>" + completions[i] + "</b>" + "\n";
+                this._entryText.set_text(completions[i]);
+            } else {
+                text = text + completions[i] + "\n";
+            }
+        }
+        this._completionBox.clutter_text.set_markup(text);
+        this._entryText.set_selection(startpos, -1);
     },
 
     _getCompletion : function(text) {
