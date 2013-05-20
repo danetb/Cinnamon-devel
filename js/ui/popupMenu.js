@@ -1243,9 +1243,7 @@ PopupMenu.prototype = {
         this.isOpen = false;
         global.menuStackLength -= 1;
 
-        Main.panel._hidePanel();
-        if (Main.panel2 != null)
-            Main.panel2._hidePanel();
+        Main.layoutManager.hidePanels();
 
         if (this._activeMenuItem)
             this._activeMenuItem.setActive(false);

@@ -160,6 +160,12 @@ LayoutManager.prototype = {
         return this._panelBoxes[0];
     },
 
+    hidePanels: function() {
+        this._panels.forEach(function(panel) {
+            panel._hidePanel();
+        }, this);
+    },
+
     enablePanels: function() {
         this._panels.forEach(function(panel) {
             panel.enable();
