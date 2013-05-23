@@ -207,6 +207,7 @@ LayoutManager.prototype = {
         this.edgeLeft.delay = this.edgeFlipDelay;
 
         this.hotCornerManager = new HotCorner.HotCornerManager();
+        this.hotCornerManager.updatePosition(this.topMonitor, this.bottomMonitor);
     },
     
     _toggleExpo: function() {
