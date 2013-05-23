@@ -188,7 +188,10 @@ HotCorner.prototype = {
                 Main.uiGroup.add_actor(this._ripple1);
                 Main.uiGroup.add_actor(this._ripple2);
                 Main.uiGroup.add_actor(this._ripple3);
-            }
+                this._ripple1.hide();
+                this._ripple2.hide();
+                this._ripple3.hide();
+          }
         }
         else {
             if (this._ripple1) {
@@ -223,6 +226,10 @@ HotCorner.prototype = {
         // for them to make perfect sense mathematically
 
         if (this._ripple1) {
+            this._ripple1.show();
+            this._ripple2.show();
+            this._ripple3.show();
+
             //                              delay  time  scale opacity => scale
             this._animRipple(this._ripple1, 0.0,   0.83,  0.25,  1.0,     1.5);
             this._animRipple(this._ripple2, 0.05,  1.0,   0.0,   0.7,     1.25);
