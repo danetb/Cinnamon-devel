@@ -34,6 +34,7 @@ class Module:
         sidePage.add_widget(GSettingsCheckButton(_("Allow cycling through workspaces"), "org.cinnamon.overrides", "workspace-cycle", None), True)
         sidePage.add_widget(GSettingsCheckButton(_("Only use workspaces on primary monitor (requires Cinnamon restart)"), "org.cinnamon.overrides", "workspaces-only-on-primary", None), True)
         sidePage.add_widget(GSettingsCheckButton(_("Display Expo view as a grid"), "org.cinnamon", "workspace-expo-view-as-grid", None))
+        sidePage.add_widget(GSettingsCheckButton(_("Always show all Expo workspace thumbnails in Scale mode"), "org.cinnamon", "expo-always-scale-mode", None))
 
     def shouldLoad(self):
         return True

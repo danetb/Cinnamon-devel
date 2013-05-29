@@ -46,7 +46,7 @@ const HELP_TEXT = [
     _("Home: Select first workspace"),
     _("End: Select last workspace"),
     _("g: Toggle grid mode on/off"),
-    _("o: Toggle permanent-overview-mode on/off"),
+    _("o: Toggle always-scale-mode on/off"),
     _("z: Toggle full zoom on/off"),
     _("Ctrl+Plus, Ctrl+Scroll-wheel up: Zoom in one step"),
     _("Ctrl+Minus, Ctrl+Scroll-wheel down: Zoom out one step"),
@@ -80,8 +80,21 @@ function setViewAsGrid(asGrid) {
     fetchAsGrid();
 }
 
-// persistent throughout session
-var forceOverviewMode = false;
+var g_alwaysScaleMode = false;
+function setAlwaysScaleMode(always) {
+    global.settings.set_boolean("expo-always-scale-mode", always);
+    g_alwaysScaleMode = always;
+}
+
+{
+    var fetchAlwaysScaleMode = function() {
+        g_alwaysScaleMode = global.settings.get_boolean("expo-always-scale-mode");
+    };
+
+    global.settings.connect("changed::expo-always-scale-mode", fetchAlwaysScaleMode);
+    fetchAlwaysScaleMode();
+}
+
 
 function ExpoWindowClone() {
     this._init.apply(this, arguments);
@@ -521,7 +534,7 @@ ExpoWorkspaceThumbnail.prototype = {
         this.state = ThumbnailState.NORMAL;
         this.restack();
         this._slidePosition = 0; // Fully slid in
-        this.setOverviewMode(forceOverviewMode);
+        this.setOverviewMode(g_alwaysScaleMode);
     },
 
     setOverviewMode: function(turnOn) {
@@ -920,7 +933,7 @@ ExpoWorkspaceThumbnail.prototype = {
         if (!this.box.scale) {return;}
         this.resetCloneHover();
         if (this.overviewMode === false && !force) {return;}
-        if (forceOverviewMode && !override) {return;}
+        if (g_alwaysScaleMode && !override) {return;}
         
         this.overviewMode = false;
         const iconSpacing = ICON_SIZE/4;
@@ -1175,7 +1188,7 @@ ExpoThumbnailsBox.prototype = {
         let allocId = Connector.connect(this, 'allocated', Lang.bind(this, function() {
             allocId.disconnect();
             Mainloop.timeout_add(0, Lang.bind(this, function() {
-                this.emit('set-overview-mode', forceOverviewMode);
+                this.emit('set-overview-mode', g_alwaysScaleMode);
                 this.thumbnails[this.kbThumbnailIndex].showKeyboardSelectedState(true);
             }));
         }));
@@ -1191,8 +1204,8 @@ ExpoThumbnailsBox.prototype = {
     },
 
     toggleGlobalOverviewMode: function() {
-        forceOverviewMode = !forceOverviewMode;
-        this.emit('set-overview-mode', forceOverviewMode);
+        setAlwaysScaleMode(!g_alwaysScaleMode);
+        this.emit('set-overview-mode', g_alwaysScaleMode);
     },
 
     toggleGridMode: function() {

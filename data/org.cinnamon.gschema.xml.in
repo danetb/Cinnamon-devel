@@ -528,6 +528,14 @@
       </description>
     </key>
 
+    <key name="expo-always-scale-mode" type="b">
+      <default>false</default>
+      <summary>Always show all Expo workspace thumbnails in Scale mode</summary>
+      <description>
+        When enabled both the selected and the non-selected workspaces will be shown in Scale mode.
+      </description>
+    </key>
+
     <key name="disabled-open-search-providers" type="as">
       <default>[]</default>
       <_summary>disabled OpenSearch providers</_summary>
