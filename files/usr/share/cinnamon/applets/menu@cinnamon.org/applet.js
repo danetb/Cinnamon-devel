@@ -1319,10 +1319,12 @@ MyApplet.prototype = {
                 this._addEnterEvent(button, Lang.bind(this, function() {
                         this._clearPrevAppSelection(button.actor);
                         button.actor.style_class = "menu-application-button-selected";
+                        this.selectedAppTitle.set_text("");
                         this.selectedAppDescription.set_text(button.place.id.slice(16));
                         }));
                 button.actor.connect('leave-event', Lang.bind(this, function() {
                             this._previousSelectedActor = button.actor;
+                            this.selectedAppTitle.set_text("");
                             this.selectedAppDescription.set_text("");
                             }));
                 this._placesButtons.push(button);
@@ -1372,6 +1374,7 @@ MyApplet.prototype = {
                 this._addEnterEvent(button, Lang.bind(this, function() {
                         this._clearPrevAppSelection(button.actor);
                         button.actor.style_class = "menu-application-button-selected";
+                        this.selectedAppTitle.set_text("");
                         this.selectedAppDescription.set_text(button.file.uri.slice(7));
                         }));
                 button.actor.connect('leave-event', Lang.bind(this, function() {
