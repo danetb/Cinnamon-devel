@@ -195,9 +195,14 @@ __proto__: ModalDialog.ModalDialog.prototype,
         }));
         this._enableInternalCommands = global.settings.get_boolean('development-tools');
 
-        this._internalCommands = { 'lg':
+        this._internalCommands = { 'lg-old':
                                    Lang.bind(this, function() {
                                        Main.createLookingGlass().open();
+                                   }),
+
+                                   'lg':
+                                   Lang.bind(this, function() {
+                                        Util.trySpawnCommandLine("/usr/lib/cinnamon-looking-glass/cinnamon-looking-glass.py");
                                    }),
 
                                    'r': Lang.bind(this, function() {
