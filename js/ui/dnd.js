@@ -45,6 +45,18 @@ const DragDropResult = {
 
 const DND_ANIMATION_TIME = 0.2;
 
+/* ----------------- */
+function DragEventSource() {
+    this._init();
+}
+DragEventSource.prototype = {
+    _init : function() { }
+};
+Signals.addSignalMethods(DragEventSource.prototype);
+var g_dragEventSource = new DragEventSource();
+/* ----------------- */
+
+
 let eventHandlerActor = null;
 let currentDraggable = null;
 let dragMonitors = [];
@@ -306,6 +318,7 @@ _Draggable.prototype = {
         this._dragInProgress = true;
 
         this.emit('drag-begin', time);
+        g_dragEventSource.emit('drag-begin');
         if (this._onEventId)
             this._ungrabActor();
         this._grabEvents();
@@ -596,6 +609,7 @@ _Draggable.prototype = {
                 this._dragInProgress = false;
                 global.unset_cursor();
                 this.emit('drag-end', event.get_time(), true);
+                g_dragEventSource.emit('drag-end', true);
                 this._dragComplete();
                 return true;
             }
@@ -640,6 +654,7 @@ _Draggable.prototype = {
         this._setTimer(false);
         let eventTime = eventTimeOpt || global.get_current_time();
         this.emit('drag-cancelled', eventTime);
+        g_dragEventSource.emit('drag-cancelled');
         this._dragInProgress = false;
         let [snapBackX, snapBackY, snapBackScale] = this._getRestoreLocation();
 
@@ -650,6 +665,7 @@ _Draggable.prototype = {
             if (!this._buttonDown)
                 this._dragComplete();
             this.emit('drag-end', eventTime, false);
+            g_dragEventSource.emit('drag-end', false);
             if (!this._dragOrigParent && this._dragActor)
                 this._dragActor.destroy();
 
@@ -708,6 +724,7 @@ _Draggable.prototype = {
         }
         global.unset_cursor();
         this.emit('drag-end', eventTime, false);
+        g_dragEventSource.emit('drag-end', false);
 
         this._animationInProgress = false;
         this._dragComplete();

@@ -6,6 +6,7 @@ const Mainloop = imports.mainloop;
 const Meta = imports.gi.Meta;
 const Signals = imports.signals;
 const St = imports.gi.St;
+const DND = imports.ui.dnd;
 const Main = imports.ui.main;
 const Params = imports.misc.params;
 const ScreenSaver = imports.misc.screenSaver;
@@ -57,6 +58,12 @@ LayoutManager.prototype = {
         global.screen.connect('restacked', Lang.bind(this, this._windowsRestacked));
         global.screen.connect('monitors-changed', Lang.bind(this, this._monitorsChanged));
         global.window_manager.connect('switch-workspace', Lang.bind(this, this._windowsRestacked));
+        DND.g_dragEventSource.connect('drag-begin', Lang.bind(this, function() {
+            this.showPanels();
+        }));
+        DND.g_dragEventSource.connect('drag-end', Lang.bind(this, function() {
+            this.hidePanels();
+        }));
     },
 
     setupDesktopLayout: function() {
@@ -158,6 +165,12 @@ LayoutManager.prototype = {
 
     get panelBox() {
         return this._panelBoxes[0];
+    },
+
+    showPanels: function() {
+        this._panels.forEach(function(panel) {
+            panel._showPanel();
+        }, this);
     },
 
     hidePanels: function() {
