@@ -22,4 +22,3 @@ po/Makefile.in.in
 src/Makefile.in
 tests/Makefile.in
 .pc
-.idea/
