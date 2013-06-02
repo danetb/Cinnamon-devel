@@ -192,7 +192,7 @@ MyApplet.prototype = {
             widget.setToggleState(active);
         });
         return widget;
-    }    
+    }
 };
 
 function main(metadata, orientation, panel_height) {  
