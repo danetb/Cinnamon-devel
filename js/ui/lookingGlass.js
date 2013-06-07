@@ -641,8 +641,8 @@ ErrorLog.prototype = {
 
         let stack = Main._errorLogStack;
         if(stack.length > this.addedErrors) {
-            let text = this.text.text;
-            for (; this.addedErrors < stack.length; this.addedErrors++) {
+            for (var text = this.text.text; this.addedErrors < stack.length; 
+                 this.addedErrors++) {
                 let logItem = stack[this.addedErrors];
                 text += logItem.category + ' t=' + this._formatTime(new Date(parseInt(logItem.timestamp))) + ' ' + logItem.message + '\n';
             }
@@ -1066,7 +1066,7 @@ LookingGlass.prototype = {
 
         let result = eval(fullCmd);
         let resultObj = [];
-        for(key in result) {
+        for(let key in result) {
             let type = typeof(result[key]);
             let value = result[key].toString();
             
