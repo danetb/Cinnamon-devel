@@ -250,7 +250,7 @@ LayoutManager.prototype = {
                 panel._showPanel();
             }
             if (panel.isHideable()) {
-                panel._hidePanel();
+                panel._leavePanel();
             }
         }, this);
         this._updatePanelBoxes();
