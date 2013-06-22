@@ -296,8 +296,10 @@ WindowClone.prototype = {
     },
 
     _zoomStart : function () {
+        if (!this._zooming) {
+            this.emit('zoom-start');
+        }
         this._zooming = true;
-        this.emit('zoom-start');
 
         if (!this._zoomLightbox)
             this._zoomLightbox = new Lightbox.Lightbox(Main.uiGroup,
@@ -791,6 +793,15 @@ WorkspaceMonitor.prototype = {
             this._windows[this._kbWindowIndex].overlay.setSelected(show);
         }
         this.emit('selection-changed');
+    },
+
+    selectClone: function(clone) {
+        let index = this._windows.indexOf(clone);
+        if (index > -1 && index != this._kbWindowIndex) {
+            this.showActiveSelection(false);
+            this._kbWindowIndex = index;
+            this.showActiveSelection(true);
+        }
     },
 
     _onCloneContextMenuRequested: function(clone) {
@@ -1338,10 +1349,10 @@ WorkspaceMonitor.prototype = {
                       Lang.bind(this, this._onCloneClosed));
         clone.connect('context-menu-requested',
                       Lang.bind(this, this._onCloneContextMenuRequested));
-        clone.connect('zoom-start',
-                      Lang.bind(this, function() {
-                          this._windowIsZooming = true;
-                      }));
+        clone.connect('zoom-start', Lang.bind(this, function(clone) {
+            this.selectClone(clone);
+            this._windowIsZooming = true;
+        }));
         clone.connect('zoom-end',
                       Lang.bind(this, function() {
                           this._windowIsZooming = false;
