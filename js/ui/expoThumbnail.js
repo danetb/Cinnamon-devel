@@ -1296,6 +1296,13 @@ ExpoThumbnailsBox.prototype = {
             || symbol === Clutter.w && modifiers & Clutter.ModifierType.CONTROL_MASK;
 
         if (pressed) {
+            if (symbol === Clutter.Escape) {
+                if (!this._workspaceOperationPending) {
+                    Main.expo.hide();
+                }
+                this._workspaceOperationPending = false;
+                return true;
+            }
             if ((symbol === Clutter.plus && ctrlDown)) {
                 this.adjustZoom('more-zoom');
                 return true;
@@ -1313,13 +1320,6 @@ ExpoThumbnailsBox.prototype = {
             }
         }
         else if (!pressed) { // released
-            if (symbol === Clutter.Escape) {
-                if (!this._workspaceOperationPending) {
-                    Main.expo.hide();
-                }
-                this._workspaceOperationPending = false;
-                return true;
-            }
             if (inserting) {
                 if (this._workspaceOperationPending) {
                     this._workspaceOperationPending = false;
