@@ -19,16 +19,12 @@ function sortWindowsByUserTime(win1, win2) {
     return (t2 > t1) ? 1 : -1 ;
 }
 
-function matchSkipTaskbar(win) {
-    return !win.is_skip_taskbar();
-}
-
 function matchWmClass(win) {
-    return win.get_wm_class() == this && !win.is_skip_taskbar();
+    return win.get_wm_class() == this && Main.isInteresting(win);
 }
 
 function matchWorkspace(win) {
-    return win.get_workspace() == this && !win.is_skip_taskbar();
+    return win.get_workspace() == this && Main.isInteresting(win);
 }
 
 function primaryModifier(mask) {
@@ -118,7 +114,7 @@ AppSwitcher.prototype = {
         switch(binding.get_name()) {
             case 'switch-panels':
                 // Switch between windows of all workspaces
-                windows = windows.filter( matchSkipTaskbar );
+                windows = windows.filter( Main.isInteresting );
                 break;
             case 'switch-group':
                 // Switch between windows of same application from all workspaces
