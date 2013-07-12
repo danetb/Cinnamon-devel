@@ -86,6 +86,7 @@ const Keybindings = imports.ui.keybindings;
 const DEFAULT_BACKGROUND_COLOR = new Clutter.Color();
 DEFAULT_BACKGROUND_COLOR.from_pixel(0x2266bbff);
 
+const FALLBACK_THEME_PATH = "/usr/share/cinnamon/theme/cinnamon.css"
 const CIN_LOG_FOLDER = GLib.get_home_dir() + '/.cinnamon/';
 
 let automountManager = null;
@@ -783,7 +784,7 @@ function loadTheme() {
     if (_cssStylesheet != null)
         cssStylesheet = _cssStylesheet;
 
-    let theme = new St.Theme ();
+    let theme = new St.Theme( {default_stylesheet: FALLBACK_THEME_PATH} );
     theme.load_stylesheet(cssStylesheet);
     
     themeContext.set_theme (theme);
