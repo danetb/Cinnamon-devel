@@ -315,14 +315,6 @@
       </_description>
     </key>
 
-     <key name="desktop-panel-layout" type="s">
-      <default>"bottom,bottom"</default>
-      <_summary>Panel-layout style (deprecated)</_summary>
-      <_description>
-      Deprecated, retained for backward compatibility. Current versions of Cinnamon use "desktop-layout".
-      </_description>
-    </key>
-
      <key name="desktop-layout" type="s">
       <default>"bottom,bottom"</default>
       <_summary>Panel-layout style</_summary>
@@ -339,6 +331,14 @@
       </_description>
     </key>
     
+     <key name="desktop-panel-layout" type="s">
+      <default>"bottom,bottom"</default>
+      <_summary>Panel-layout style (deprecated)</_summary>
+      <_description>
+      Deprecated, retained for backward compatibility. Current versions of Cinnamon use "desktop-layout".
+      </_description>
+    </key>
+
     <key name="date-format" type="s">
       <default>"YYYY-MM-DD"</default>
       <_summary>Date format</_summary>
