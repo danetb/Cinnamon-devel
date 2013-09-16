@@ -46,7 +46,8 @@ CATEGORIES = [
 #        Display name                         ID              Show it? Always False to start              Icon
     {"label": _("Appearance"),            "id": "appear",      "show": False,                       "icon": "cat-appearance.svg"},
     {"label": _("Preferences"),           "id": "prefs",       "show": False,                       "icon": "cat-prefs.svg"},
-    {"label": _("Hardware"),              "id": "hardware",    "show": False,                       "icon": "cat-hardware.svg"}
+    {"label": _("Hardware"),              "id": "hardware",    "show": False,                       "icon": "cat-hardware.svg"},
+    {"label": _("Administration"),        "id": "admin",       "show": False,                       "icon": "cat-admin.svg"}
 ]
 
 CONTROL_CENTER_MODULES = [
@@ -54,8 +55,8 @@ CONTROL_CENTER_MODULES = [
     [_("Networking"),                       "network",            "network.svg",                 "hardware",      False,          _("network, wireless, wifi, ethernet, broadband, internet")],
     [_("Display"),                          "display",            "display.svg",                 "hardware",      False,          _("display, screen, monitor, layout, resolution, dual, lcd")],
     [_("Regional Settings"),                "region",             "region.svg",                     "prefs",      False,          _("region, layout, keyboard, language")],
+    [_("Bluetooth"),                        "bluetooth",          "bluetooth.svg",               "hardware",      False,          _("bluetooth, dongle, transfer, mobile")], 
     [_("Universal Access"),                 "universal-access",   "universal-access.svg",           "prefs",      False,          _("magnifier, talk, access, zoom, keys, contrast")],
-    [_("User Accounts"),                    "user-accounts",      "user-accounts.svg",              "prefs",      True,           _("users, accounts, add, password, picture")],
     [_("Power Management"),                 "power",              "power.svg",                   "hardware",      False,          _("power, suspend, hibernate, laptop, desktop")],
     [_("Sound"),                            "sound",              "sound.svg",                   "hardware",      False,          _("sound, speakers, headphones, test")],
     [_("Color"),                            "color",              "color.svg",                   "hardware",      True,           _("color, profile, display, printer, output")]
@@ -63,14 +64,14 @@ CONTROL_CENTER_MODULES = [
 
 STANDALONE_MODULES = [
 #         Label                          Executable                          Icon                Category        Advanced?               Keywords for filter
-    [_("Printers"),                      "system-config-printer",        "printer.svg",         "hardware",       False,          _("printers, laser, inkjet")],
-    [_("Bluetooth"),                     "blueman-manager",              "bluetooth.svg",       "hardware",       False,          _("bluetooth, dongle, transfer, mobile")],
+    [_("Printers"),                      "system-config-printer",        "printer.svg",         "hardware",       False,          _("printers, laser, inkjet")],    
     [_("Firewall"),                      "gufw",                         "firewall.svg",        "prefs",          True,           _("firewall, block, filter, programs")],
     [_("Languages"),                     "gnome-language-selector",      "language.svg",        "prefs",          False,          _("language, install, foreign")],
-    [_("Login Screen"),                  "gksu /usr/sbin/mdmsetup",      "login.svg",           "prefs",          True,           _("login, mdm, gdm, manager, user, password, startup, switch")],
+    [_("Login Screen"),                  "gksu /usr/sbin/mdmsetup",      "login.svg",           "admin",          True,           _("login, mdm, gdm, manager, user, password, startup, switch")],
     [_("Startup Programs"),              "cinnamon-session-properties",  "startup-programs.svg","prefs",          False,          _("startup, programs, boot, init, session")],
-    [_("Device Drivers"),                "mintdrivers",                  "drivers.svg",         "hardware",       False,          _("video, driver, wifi, card, hardware, proprietary, nvidia, radeon, nouveau, fglrx")],
-    [_("Software Sources"),              "mintsources",                  "sources.svg",         "prefs",          True,           _("ppa, repository, package, source, download")]
+    [_("Device Drivers"),                "mintdrivers",                  "drivers.svg",         "admin",          False,          _("video, driver, wifi, card, hardware, proprietary, nvidia, radeon, nouveau, fglrx")],
+    [_("Software Sources"),              "mintsources",                  "sources.svg",         "admin",          True,           _("ppa, repository, package, source, download")],
+    [_("Users and Groups"),              "cinnamon-settings-users",      "user-accounts.svg",   "admin",          True,           _("user, users, account, accounts, group, groups, password")]
 ]
 
 class MainWindow:

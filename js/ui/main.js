@@ -53,6 +53,7 @@ const Cinnamon = imports.gi.Cinnamon;
 const St = imports.gi.St;
 const PointerTracker = imports.misc.pointerTracker;
 
+const SoundManager = imports.ui.soundManager;
 const AppletManager = imports.ui.appletManager;
 const AutomountManager = imports.ui.automountManager;
 const AutorunManager = imports.ui.autorunManager;
@@ -85,12 +86,12 @@ const Keybindings = imports.ui.keybindings;
 const DEFAULT_BACKGROUND_COLOR = new Clutter.Color();
 DEFAULT_BACKGROUND_COLOR.from_pixel(0x2266bbff);
 
-const FALLBACK_THEME_PATH = "/usr/share/cinnamon/theme/cinnamon.css"
 const CIN_LOG_FOLDER = GLib.get_home_dir() + '/.cinnamon/';
 
 let automountManager = null;
 let autorunManager = null;
 
+let soundManager = null;
 let placesManager = null;
 let overview = null;
 let expo = null;
@@ -128,7 +129,6 @@ let background = null;
 
 let deskletContainer = null;
 let software_rendering = false;
-
 
 let lg_log_file;
 let can_log = false;
@@ -273,7 +273,7 @@ function start() {
     }
 
     // Chain up async errors reported from C
-    global.connect('notify-error', function (global, msg, detail) { notifyError(msg, detail); });
+    global.connect('notify-error', function (global, msg, detail) { notifyError(msg, detail); });    
 
     Gio.DesktopAppInfo.set_desktop_env('GNOME');
 
@@ -304,6 +304,11 @@ function start() {
 
     Gtk.IconTheme.get_default().append_search_path("/usr/share/cinnamon/icons/");
     _defaultCssStylesheet = global.datadir + '/theme/cinnamon.css';
+
+
+    soundManager = new SoundManager.SoundManager();
+
+    soundManager.play('login');
 
     themeManager = new ThemeManager.ThemeManager();
     deskletContainer = new DeskletManager.DeskletContainer();
@@ -415,6 +420,11 @@ function notifyCinnamon2d() {
                    _("Cinnamon is currently running without video hardware acceleration and, as a result, you may observe much higher than normal CPU usage.\n\n") +
                    _("There could be a problem with your drivers or some other issue.  For the best experience, it is recommended that you only use this mode for") +
                    _(" troubleshooting purposes."), icon);
+}
+
+function loadSoundSettings() {
+
+
 }
 
 function enablePanels() {
@@ -776,7 +786,7 @@ function loadTheme() {
     if (_cssStylesheet != null)
         cssStylesheet = _cssStylesheet;
 
-    let theme = new St.Theme( {default_stylesheet: FALLBACK_THEME_PATH} );
+    let theme = new St.Theme ();
     theme.load_stylesheet(cssStylesheet);
     
     themeContext.set_theme (theme);

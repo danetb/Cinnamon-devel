@@ -234,6 +234,7 @@ WindowManager.prototype = {
     },
 
     _minimizeWindow : function(cinnamonwm, actor) {
+        Main.soundManager.play('minimize');
         // reset all cached values in case "traditional" is no longer in effect
         actor.get_meta_window()._cinnamonwm_has_origin = false;
         actor.get_meta_window()._cinnamonwm_minimize_transition = undefined;
@@ -313,6 +314,7 @@ WindowManager.prototype = {
     },
 
     _tileWindow : function (cinnamonwm, actor, targetX, targetY, targetWidth, targetHeight) {
+        Main.soundManager.play('tile');
         if (!this._shouldAnimate(actor)) {
             cinnamonwm.completed_tile(actor);
             return;
@@ -379,6 +381,7 @@ WindowManager.prototype = {
     },
 
     _maximizeWindow : function(cinnamonwm, actor, targetX, targetY, targetWidth, targetHeight) {
+        Main.soundManager.play('maximize');
         if (!this._shouldAnimate(actor)) {
             cinnamonwm.completed_maximize(actor);
             return;
@@ -446,7 +449,8 @@ WindowManager.prototype = {
     },
 
     _unmaximizeWindow : function(cinnamonwm, actor, targetX, targetY, targetWidth, targetHeight) {
-         if (!this._shouldAnimate(actor)) {
+        Main.soundManager.play('unmaximize');
+        if (!this._shouldAnimate(actor)) {
             cinnamonwm.completed_unmaximize(actor);
             return;
         }
@@ -668,6 +672,11 @@ WindowManager.prototype = {
                 }
             } // if window list doesn't support finding an origin
         }
+        else {
+            if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL) {
+                Main.soundManager.play('map');
+            }            
+        }
         
         if (effect == "fade") {            
             this._mapping.push(actor);
@@ -708,7 +717,12 @@ WindowManager.prototype = {
         }
     },
 
-    _destroyWindow : function(cinnamonwm, actor) {
+    _destroyWindow : function(cinnamonwm, actor) {  
+        
+        if (actor.meta_window.get_window_type() == Meta.WindowType.NORMAL) {
+            Main.soundManager.play('close');
+        }
+
         let window = actor.meta_window;
         if (actor._notifyWindowTypeSignalId) {
             window.disconnect(actor._notifyWindowTypeSignalId);
@@ -1245,10 +1259,12 @@ WindowManager.prototype = {
     },
 
     actionMoveWorkspaceLeft: function(time) {
+        Main.soundManager.play('switch');
         global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.LEFT).activate(time || global.get_current_time());
     },
 
     actionMoveWorkspaceRight: function(time) {
+        Main.soundManager.play('switch');
         global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.RIGHT).activate(time || global.get_current_time());
     },
 
