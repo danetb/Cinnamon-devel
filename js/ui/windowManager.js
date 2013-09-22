@@ -234,7 +234,9 @@ WindowManager.prototype = {
     },
 
     _minimizeWindow : function(cinnamonwm, actor) {
+
         Main.soundManager.play('minimize');
+
         // reset all cached values in case "traditional" is no longer in effect
         actor.get_meta_window()._cinnamonwm_has_origin = false;
         actor.get_meta_window()._cinnamonwm_minimize_transition = undefined;
@@ -574,7 +576,7 @@ WindowManager.prototype = {
             getWindowDimmer(actor).dimFraction = 0.0;
     },
 
-    _mapWindow : function(cinnamonwm, actor) {
+    _mapWindow : function(cinnamonwm, actor) {           
         actor._windowType = actor.meta_window.get_window_type();
         actor._notifyWindowTypeSignalId = actor.meta_window.connect('notify::window-type', Lang.bind(this, function () {
             let type = actor.meta_window.get_window_type();

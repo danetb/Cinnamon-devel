@@ -273,23 +273,21 @@ AppMenuButton.prototype = {
     	this._visible = true;
 
         this.actor.connect('destroy', Lang.bind(this, this._onDestroy));
-        
-        this._updateCaptionId = this.metaWindow.connect('notify::title', Lang.bind(this, function () {
+        let set_title = Lang.bind(this, function () {
             let title = this.getDisplayTitle();
             this._label.set_text(title);
             if (this._tooltip) this._tooltip.set_text(title);
-        }));
-                
+            return title;
+        });
+        this._updateCaptionId = this.metaWindow.connect('notify::title', set_title);
+        this._updateTileTypeId = this.metaWindow.connect('notify::tile-type', set_title);
+
         this._spinner = new Panel.AnimatedIcon('process-working.svg', PANEL_ICON_SIZE);
         this._container.add_actor(this._spinner.actor);
         this._spinner.actor.lower_bottom();
         
         this.set_icon(panel_height);
-        let title = this.getDisplayTitle();
-        if (metaWindow.minimized)
-            this._label.set_text("[" + title + "]");
-        else
-            this._label.set_text(title);
+        let title = set_title();
         
         if(animation){
 			this.startAnimation(); 
@@ -387,11 +385,24 @@ AppMenuButton.prototype = {
         let tracker = Cinnamon.WindowTracker.get_default();
         let app = tracker.get_window_app(this.metaWindow);
         if (!title) title = app ? app.get_name() : '?';
-        return title;
+
+        if (this.metaWindow.minimized) {
+            return "["+ title +"]";                        
+        }                    
+        else if (this.metaWindow.tile_type == Meta.WindowTileType.TILED) {
+            return "|"+ title;
+        }
+        else if (this.metaWindow.tile_type == Meta.WindowTileType.SNAPPED) {
+            return "||"+ title;
+        }
+        else {
+            return title;
+        }        
     },
 
     _onDestroy: function() {
         this.metaWindow.disconnect(this._updateCaptionId);
+        this.metaWindow.disconnect(this._updateTileTypeId);        
         this._tooltip.destroy();
         if (this.rightClickMenu) {
             this.rightClickMenu.destroy();
@@ -817,14 +828,17 @@ MyApplet.prototype = {
 
             this.switchWorkspaceHandler = global.window_manager.connect('switch-workspace',
                                             Lang.bind(this, this._refreshItems));
+            
             global.window_manager.connect('minimize',
-                                            Lang.bind(this, this._onMinimize));
+                                            Lang.bind(this, this._onWindowStateChange));
             global.window_manager.connect('maximize',
-                                            Lang.bind(this, this._onMaximize));
+                                            Lang.bind(this, this._onWindowStateChange));
             global.window_manager.connect('unmaximize',
-                                            Lang.bind(this, this._onMaximize));
+                                            Lang.bind(this, this._onWindowStateChange));
             global.window_manager.connect('map',
-                                            Lang.bind(this, this._onMap));
+                                            Lang.bind(this, this._onWindowStateChange));
+            global.window_manager.connect('tile',
+                                            Lang.bind(this, this._onWindowStateChange));
                                             
             this._workspaces = [];
             this._changeWorkspaces();
@@ -977,35 +991,15 @@ MyApplet.prototype = {
         this._onFocus();
     },
 
-    _onWindowStateChange: function(state, actor) {
+    _onWindowStateChange: function(cinnamonwm, actor) {
         for ( let i=0; i<this._windows.length; ++i ) {
             if ( this._windows[i].metaWindow == actor.get_meta_window() ) {
                 let windowReference = this._windows[i];
                 let title = windowReference.getDisplayTitle();
-                
-                if (state == 'minimize') {
-                    windowReference._label.set_text("["+ title +"]");
-                    return;
-                } else if (state == 'map') {
-                    windowReference._label.set_text(title);
-                    return;
-                }
+                windowReference._label.set_text(title);                
             }
         }
     },
-    
-    _onMinimize: function(cinnamonwm, actor) {
-        this._onWindowStateChange('minimize', actor);
-    },
-    
-    _onMaximize: function(cinnamonwm, actor) {
-        this._onWindowStateChange('maximize', actor);
-    },
-    
-    _onMap: function(cinnamonwm, actor) {
-        this._onWindowStateChange('map', actor);
-    },
-   
     getOriginFromWindow: function(metaWindow) {
         for ( let i=0; i<this._windows.length; ++i ) {
             if ( this._windows[i].metaWindow == metaWindow ) {

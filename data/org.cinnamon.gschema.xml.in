@@ -602,18 +602,11 @@
     </key>
 
     <key name="window-list-applet-alert" type="b">
-      <default>false</default>
-      <summary>Enable window-list alerts</summary>
+      <default>true</default>
+      <summary>Enable window list alerts</summary>
       <description>
-        When enabled items in the window-list applet will change style and pulse their icon when they want attention.
+        Enable window list alerts
       </description>
-    </key>
-
-    <key name="desklets-minimum-decoration" type="i">
-      <default>2</default>
-      <_summary>The minimum decoration level of the desklet</_summary>
-      <_description>The minimum amount of decoration a desklet must have.
-      </_description>
     </key>
 
     <key name="desklet-decorations" type="i">

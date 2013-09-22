@@ -143,9 +143,9 @@ AppletPopupMenu.prototype = {
      */
     setMaxHeight: function() {
         let monitor = Main.layoutManager.findMonitorForActor(this.launcher.actor);
-        this.actor.style = ('max-height: ' +
-                            Math.round(monitor.height - this.launcher.actor.get_parent().height) +
-                            'px;');
+        let maxHeight = Math.round(monitor.height - Main.panel.actor.height - this.actor.get_theme_node().get_length('-boxpointer-gap'));
+        if (Main.panel2!==null) maxHeight -= Main.panel2.actor.height;
+        this.actor.style = ('max-height: ' + maxHeight + 'px;');
     }
 }
 
