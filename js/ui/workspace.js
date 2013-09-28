@@ -1649,20 +1649,24 @@ Workspace.prototype = {
         }
 
         let activeMonitor = this._monitors[this.currentMonitorIndex];
+        let event_state = Cinnamon.get_event_state(event);
+        let shiftDown = event_state & Clutter.ModifierType.SHIFT_MASK;
+        let ctrlDown = event_state & Clutter.ModifierType.CONTROL_MASK;
+        let altDown = event_state & Clutter.ModifierType.MOD1_MASK;
 
-        if ((symbol === Clutter.m  || symbol === Clutter.M || symbol === Clutter.KEY_space) &&
-            (modifiers & Clutter.ModifierType.MOD1_MASK) && !(modifiers & Clutter.ModifierType.CONTROL_MASK))
-        {
+        if (symbol === Clutter.Menu ||
+                (symbol == Clutter.F10 && shiftDown && !ctrlDown && !altDown) // Standardish context-menu shortcut
+        ){
             activeMonitor.showMenuForSelectedWindow();
             return true;
         }
 
-        if (symbol === Clutter.w && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+        if (symbol === Clutter.w && ctrlDown) {
             activeMonitor.closeSelectedWindow();
             return true;
         }
 
-        if ((symbol === Clutter.m || symbol === Clutter.M) && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+        if ((symbol === Clutter.m || symbol === Clutter.M) && ctrlDown) {
             activeMonitor.moveSelectedWindowToNextMonitor();
             return true;
         }
@@ -1674,15 +1678,15 @@ Workspace.prototype = {
             Main.overview.hide();
             return true;
         }
-        if (symbol === Clutter.plus && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+        if (symbol === Clutter.plus && ctrlDown) {
             activeMonitor.zoomSelectedWindow(Clutter.ScrollDirection.UP);
             return true;
         }
-        if (symbol === Clutter.minus && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+        if (symbol === Clutter.minus && ctrlDown) {
             activeMonitor.zoomSelectedWindow(Clutter.ScrollDirection.DOWN);
             return true;
         }
-        if (symbol - '48' === 0 && modifiers & Clutter.ModifierType.CONTROL_MASK) {
+        if (symbol - '48' === 0 && ctrlDown) {
             activeMonitor.zoomSelectedWindow(-1); // end zoom
             return true;
         }
