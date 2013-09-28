@@ -797,6 +797,7 @@ WorkspaceMonitor.prototype = {
     },
 
     selectClone: function(clone) {
+        this._myWorkspace.selectMonitor(this.monitorIndex);
         let index = this._windows.indexOf(clone);
         if (index > -1 && index != this._kbWindowIndex) {
             this.showActiveSelection(false);
@@ -1624,14 +1625,15 @@ Workspace.prototype = {
     },
 
     selectNextNonEmptyMonitor: function(start, increment) {
-        if (this._monitors.length === 1) {
-            this.currentMonitorIndex = 0;
-            this._monitors[this.currentMonitorIndex].showActiveSelection(true);
+        this.selectMonitor(this.findNextNonEmptyMonitor(start || 0, increment));
+    },
+
+    selectMonitor: function(index) {
+        if (this.currentMonitorIndex === index) {
             return;
         }
-        let previousIndex = this.currentMonitorIndex;
-        this.currentMonitorIndex = this.findNextNonEmptyMonitor(start || 0, increment);
-        this._monitors[previousIndex].showActiveSelection(false);
+        this._monitors[this.currentMonitorIndex].showActiveSelection(false);
+        this.currentMonitorIndex = index;
         this._monitors[this.currentMonitorIndex].showActiveSelection(true);
     },
 
