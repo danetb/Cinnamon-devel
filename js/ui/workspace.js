@@ -403,6 +403,7 @@ WindowOverlay.prototype = {
         this._parentActor = parentActor;
         this._hidden = false;
         this._hovering = false;
+        this._isSelected = null;
 
         let tracker = Cinnamon.WindowTracker.get_default();
         let app = tracker.get_window_app(metaWindow);
@@ -492,6 +493,10 @@ WindowOverlay.prototype = {
     },
 
     setSelected: function(selected) {
+        if (this._isSelected === selected) {
+            return;
+        }
+        this._isSelected = selected;
         this.title.name = selected ? 'selected' : '';
         this.refreshTitle(this.title.text);
         
@@ -781,29 +786,25 @@ WorkspaceMonitor.prototype = {
             return false; // not handled
         }
 
-        if (currentIndex !== nextIndex) {
-            this.showActiveSelection(false);
-        }
-        this._kbWindowIndex = currentIndex = nextIndex;
-        this.showActiveSelection(true);
+        this.selectIndex(nextIndex);
         return true;
     },
     
-    showActiveSelection: function(show) {
-        if (this._kbWindowIndex > -1 && this._kbWindowIndex < this._windows.length) {
-            this._windows[this._kbWindowIndex].overlay.setSelected(show);
+    showActiveSelection: function() {
+        this.selectIndex(this._kbWindowIndex);
+    },
+
+    selectIndex: function(index) {
+        this._kbWindowIndex = index;
+        let activeClone = null;
+        if (index > -1 && index < this._windows.length) {
+            activeClone = this._windows[this._kbWindowIndex];
         }
-        this.emit('selection-changed');
+        this._myWorkspace.selectActiveClone(activeClone, this);
     },
 
     selectClone: function(clone) {
-        this._myWorkspace.selectMonitor(this.monitorIndex);
-        let index = this._windows.indexOf(clone);
-        if (index > -1 && index != this._kbWindowIndex) {
-            this.showActiveSelection(false);
-            this._kbWindowIndex = index;
-            this.showActiveSelection(true);
-        }
+        this.selectIndex(this._windows.indexOf(clone));
     },
 
     _onCloneContextMenuRequested: function(clone) {
@@ -1132,13 +1133,12 @@ WorkspaceMonitor.prototype = {
                 scale: stageWidth / clone.actor.width
             };
         }
-        if (index === this._kbWindowIndex) {
-            if (this._kbWindowIndex >= this._windows.length) {
-                this._kbWindowIndex = 0;
-            }
-            if (this._kbWindowIndex < this._windows.length) {
-                this._windows[this._kbWindowIndex].overlay.setSelected(true);
-            }
+
+        if (this._kbWindowIndex >= this._windows.length) {
+            this._kbWindowIndex = this._windows.length - 1;
+        }
+        if (clone === this._myWorkspace._activeClone) {
+            this.selectIndex(this._kbWindowIndex);
         }
         
         clone.destroy();
@@ -1601,6 +1601,7 @@ Workspace.prototype = {
         this.actor = new Clutter.Group();
         this.actor.set_size(0, 0);
         this._monitors = [];
+        this._activeClone = null;
         this.currentMonitorIndex = Main.layoutManager.primaryIndex;
         Main.layoutManager.monitors.forEach(function(monitor, ix) {
             let m = new WorkspaceMonitor(metaWorkspace, ix, this, ix === this.currentMonitorIndex)
@@ -1629,12 +1630,26 @@ Workspace.prototype = {
     },
 
     selectMonitor: function(index) {
-        if (this.currentMonitorIndex === index) {
-            return;
-        }
-        this._monitors[this.currentMonitorIndex].showActiveSelection(false);
         this.currentMonitorIndex = index;
-        this._monitors[this.currentMonitorIndex].showActiveSelection(true);
+        this._monitors[this.currentMonitorIndex].showActiveSelection();
+    },
+
+    selectActiveClone: function(clone, wsMonitor) {
+        let current = this._activeClone;
+        if (clone) {
+            this.currentMonitorIndex = wsMonitor.monitorIndex;
+        }
+        this._activeClone = clone;
+
+        if (current !== this._activeClone) {
+            if (current) {
+                current.overlay.setSelected(false);
+            }
+            if (this._activeClone) {
+                this._activeClone.overlay.setSelected(true);
+            }
+            wsMonitor.emit('selection-changed');
+        }
     },
 
     _onKeyPress: function(actor, event) {
