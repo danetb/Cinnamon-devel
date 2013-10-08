@@ -1260,14 +1260,22 @@ WindowManager.prototype = {
         actor.connect('key-release-event', Lang.bind(this, onKeyPressRelease, false));
     },
 
-    actionMoveWorkspaceLeft: function(time) {
-        Main.soundManager.play('switch');
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.LEFT).activate(time || global.get_current_time());
+    actionMoveWorkspaceLeft: function() {
+        var active = global.screen.get_active_workspace();        
+        var neighbour = active.get_neighbor(Meta.MotionDirection.LEFT)
+        if (active != neighbour) {
+            Main.soundManager.play('switch');
+            neighbour.activate(global.get_current_time());
+        }
     },
 
-    actionMoveWorkspaceRight: function(time) {
-        Main.soundManager.play('switch');
-        global.screen.get_active_workspace().get_neighbor(Meta.MotionDirection.RIGHT).activate(time || global.get_current_time());
+    actionMoveWorkspaceRight: function() {
+        var active = global.screen.get_active_workspace();        
+        var neighbour = active.get_neighbor(Meta.MotionDirection.RIGHT)
+        if (active != neighbour) {
+            Main.soundManager.play('switch');
+            neighbour.activate(global.get_current_time());
+        }
     },
 
     actionMoveWorkspaceUp: function(time) {
