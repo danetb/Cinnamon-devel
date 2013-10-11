@@ -92,6 +92,7 @@ let automountManager = null;
 let autorunManager = null;
 
 let soundManager = null;
+let backgroundManager = null;
 let placesManager = null;
 let overview = null;
 let expo = null;
