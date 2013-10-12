@@ -389,12 +389,6 @@ AppMenuButton.prototype = {
         if (this.metaWindow.minimized) {
             return "["+ title +"]";                        
         }                    
-        else if (this.metaWindow.tile_type == Meta.WindowTileType.TILED) {
-            return "|"+ title;
-        }
-        else if (this.metaWindow.tile_type == Meta.WindowTileType.SNAPPED) {
-            return "||"+ title;
-        }
         else {
             return title;
         }        
