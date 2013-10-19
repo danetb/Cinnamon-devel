@@ -950,13 +950,12 @@ WindowManager.prototype = {
             let workspace_osd_x = global.settings.get_int("workspace-osd-x");
             let workspace_osd_y = global.settings.get_int("workspace-osd-y");
             let duration = global.settings.get_int("workspace-osd-duration") / 1000;
-            this._forEachWorkspaceMonitor(function(monitor) {
-                this._hideWorkspaceOSD(monitor);
+            this._forEachWorkspaceMonitor(function(monitor, mIndex) {
                 monitor._workspace_osd = new St.Label({style_class:'workspace-osd'});
                 monitor._workspace_osd.set_text(Main.getWorkspaceName(current_workspace_index));
                 monitor._workspace_osd.set_opacity = 0;
+                this._showWorkspaceGridForMonitor(mIndex, monitor._workspace_osd);
                 Main.layoutManager.addChrome(monitor._workspace_osd, { visibleInFullscreen: false, affectsInputRegion: false });
-                this._showWorkspaceGrid(monitor._workspace_osd);
                 /*
                  * This aligns the osd edges to the minimum/maximum values from gsettings,
                  * if those are selected to be used. For values in between minimum/maximum,
@@ -1067,7 +1066,14 @@ WindowManager.prototype = {
     },
 
     _showWorkspaceGrid : function(guardian) {
-        if (this.showingOsdGrid) { return;}
+        this._forEachWorkspaceMonitor(function(monitor, mIndex) {
+            this._showWorkspaceGridForMonitor(mIndex, guardian);
+        }, this);
+    },
+
+    _showWorkspaceGridForMonitor : function(mIndex, guardian) {
+        let monitor = Main.layoutManager.monitors[mIndex];
+        if (monitor._showingOsdGrid) { return;}
 
         const INACTIVE_STYLE = "border-color: rgba(127,128,127, 1); border-radius:0";
         const ACTIVE_STYLE = "border-color: rgba(0,255,0,0.9); border-radius:0";
@@ -1082,7 +1088,7 @@ WindowManager.prototype = {
             stackIndices[stack[i].get_meta_window()] = i;
         }
 
-        this._forEachWorkspaceMonitor(function(monitor, mIndex) {
+        if (true) {
             let osd = new St.Bin({reactive: false});
             Main.uiGroup.add_actor(osd);
             let dialogLayout = new St.BoxLayout({ style_class: 'modal-dialog', vertical: true});
@@ -1168,9 +1174,12 @@ WindowManager.prototype = {
             });
             switchConnection.tie(osd);
             osd.set_position(monitor.x + Math.floor((monitor.width - osd.width)/2), monitor.y + Math.floor((monitor.height - osd.height)/2));
-            this.showingOsdGrid = true;
-            guardian.connect('destroy', Lang.bind(this, function() {osd.destroy(); this.showingOsdGrid = false;}));
-        }, this);
+            monitor._showingOsdGrid = true;
+
+            if (guardian) {
+                guardian.connect('destroy', Lang.bind(this, function() {osd.destroy(); monitor._showingOsdGrid = false;}));
+            }
+        }
     },
 
     switchWorkspace : function(bindingName, forceAnimation) {
