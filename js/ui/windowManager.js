@@ -9,6 +9,7 @@ const Mainloop = imports.mainloop;
 const Gio = imports.gi.Gio;
 const AppletManager = imports.ui.appletManager;
 const Connector = imports.misc.connector;
+const AppSwitcher = imports.ui.appSwitcher.appSwitcher;
 const CoverflowSwitcher = imports.ui.appSwitcher.coverflowSwitcher;
 const TimelineSwitcher = imports.ui.appSwitcher.timelineSwitcher;
 const ClassicSwitcher = imports.ui.appSwitcher.classicSwitcher;
@@ -105,6 +106,7 @@ WindowManager.prototype = {
         this._destroying = [];
 
         this._snap_osd = null;
+        this._workspace_osd = null;
 
         this._dimmedWindows = [];
 
@@ -949,11 +951,12 @@ WindowManager.prototype = {
             let workspace_osd_y = global.settings.get_int("workspace-osd-y");
             let duration = global.settings.get_int("workspace-osd-duration") / 1000;
             this._forEachWorkspaceMonitor(function(monitor) {
-                let label = new St.Label({style_class:'workspace-osd'});
-                this._showWorkspaceGrid(label);
-                label.set_text(Main.getWorkspaceName(current_workspace_index));
-                label.set_opacity = 0;
-                Main.layoutManager.addChrome(label, { visibleInFullscreen: false, affectsInputRegion: false });
+                this._hideWorkspaceOSD(monitor);
+                monitor._workspace_osd = new St.Label({style_class:'workspace-osd'});
+                monitor._workspace_osd.set_text(Main.getWorkspaceName(current_workspace_index));
+                monitor._workspace_osd.set_opacity = 0;
+                Main.layoutManager.addChrome(monitor._workspace_osd, { visibleInFullscreen: false, affectsInputRegion: false });
+                this._showWorkspaceGrid(monitor._workspace_osd);
                 /*
                  * This aligns the osd edges to the minimum/maximum values from gsettings,
                  * if those are selected to be used. For values in between minimum/maximum,
@@ -964,18 +967,27 @@ WindowManager.prototype = {
                  */
                 let [minX, maxX, minY, maxY] = [5, 95, 5, 95];
                 let delta = (workspace_osd_x - minX) / (maxX - minX);
-                let x = Math.round(monitor.x + (monitor.width * workspace_osd_x / 100) - (label.width * delta));
+                let x = Math.round((monitor.width * workspace_osd_x / 100) - (monitor._workspace_osd.width * delta));
                 delta = (workspace_osd_y - minY) / (maxY - minY);
-                let y = Math.round(monitor.y + (monitor.height * workspace_osd_y / 100) - (label.height * delta));
-                label.set_position(x, y);
-                Tweener.addTween(label, {   opacity: 255,
+                let y = Math.round(monitor.y + (monitor.height * workspace_osd_y / 100) - (monitor._workspace_osd.height * delta));
+                monitor._workspace_osd.set_position(x, y);
+                Tweener.addTween(monitor._workspace_osd, {   opacity: 255,
                     time: duration,
                     transition: 'linear',
+                    onCompleteScope: this,
                     onComplete: function() {
-                        Main.layoutManager.removeChrome(label);
-                        label.destroy();
+                        this._hideWorkspaceOSD(monitor);
                     }});
             }, this);
+        }
+    },
+
+    _hideWorkspaceOSD : function(monitor) {
+        if (monitor._workspace_osd != null) {
+            monitor._workspace_osd.hide();
+            Main.layoutManager.removeChrome(monitor._workspace_osd);
+            monitor._workspace_osd.destroy();
+            monitor._workspace_osd = null;
         }
     },
 
@@ -1025,6 +1037,8 @@ WindowManager.prototype = {
     },
 
     _createAppSwitcher : function(binding) {
+        if (AppSwitcher.getWindowsForBinding(binding).length == 0)
+            return;
         let style = global.settings.get_string("alttab-switcher-style");
         if(style == 'coverflow')
             new CoverflowSwitcher.CoverflowSwitcher(binding);
