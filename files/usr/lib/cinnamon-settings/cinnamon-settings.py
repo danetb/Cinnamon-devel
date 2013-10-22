@@ -40,7 +40,7 @@ AdvancedMode = _("Switch to Advanced Mode")
 ADVANCED_GSETTING = "cinnamon-settings-advanced"
 
 WIN_WIDTH = 800
-WIN_HEIGHT = 600
+WIN_HEIGHT = 1000
 WIN_H_PADDING = 20
 
 CATEGORIES = [
@@ -113,10 +113,9 @@ class MainWindow:
 
     def maybe_resize(self, sidePage):
         if not sidePage.size:
-            m, n = self.content_box.get_preferred_size()
-            self.window.resize(WIN_WIDTH, n.height + self.bar_heights + WIN_H_PADDING)
+            self.window.resize(WIN_WIDTH, WIN_HEIGHT)
         elif sidePage.size > -1:
-            self.window.resize(WIN_WIDTH, sidePage.size + self.bar_heights + WIN_H_PADDING)
+            self.window.resize(WIN_WIDTH, min(WIN_HEIGHT, sidePage.size + self.bar_heights + WIN_H_PADDING))
 
     def deselect(self, cat):
         for key in self.side_view.keys():
@@ -219,6 +218,7 @@ class MainWindow:
         self.window.set_opacity(self.opacity)
         self.window.show()
         self.calculate_bar_heights()
+        self.window.resize(WIN_WIDTH, WIN_HEIGHT)
 
         # Select the first sidePage
         if len(sys.argv) > 1 and sys.argv[1] in sidePagesIters.keys():
