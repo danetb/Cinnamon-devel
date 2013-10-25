@@ -9,7 +9,7 @@ class Module:
     def __init__(self, content_box):
         keywords = _("time, date, calendar, format, network, sync")
         advanced = False
-        sidePage = SidePage(_("Calendar"), "clock.svg", keywords, advanced, content_box)
+        sidePage = SidePage(_("Date & Time"), "date-time.svg", keywords, advanced, content_box)
         self.sidePage = sidePage
         self.name = "calendar"
         self.category = "prefs"        
@@ -33,8 +33,6 @@ class Module:
                 self.changeTimeWidget.change_using_ntp( self.ntpCheckButton.get_active() )
         except Exception, detail:
             print detail
-            
-        sidePage.add_widget(GSettingsCheckButton(_("Show week numbers in calendar"), "org.cinnamon.calendar", "show-weekdate", None), False)        
 
     def _ntp_toggled(self, widget):
         self.changeTimeWidget.change_using_ntp( self.ntpCheckButton.get_active() )

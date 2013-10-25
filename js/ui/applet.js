@@ -52,16 +52,22 @@ MenuItem.prototype = {
         this._icon = icon;
         this._callback = callback;
 
-        if (icon != null) {
+        let table = new St.Table({ homogeneous: false,
+                                      reactive: true });
 
-            this.icon = new St.Icon({ icon_name: icon,
-                                  icon_type: St.IconType.FULLCOLOR,
-                                  style_class: 'popup-menu-icon' });
-            this.addActor(this.icon);
-        }
+        this.icon = new St.Icon({ icon_name: icon,
+                              icon_type: St.IconType.FULLCOLOR,
+                              style_class: 'popup-menu-icon' });
+
+        table.add(this.icon,
+                  {row: 0, col: 0, col_span: 1, x_expand: false, x_align: St.Align.START});
 
         this.label = new St.Label({ text: text });
-        this.addActor(this.label);
+        this.label.set_margin_left(6.0)
+        table.add(this.label,
+                  {row: 0, col: 1, col_span: 1, x_align: St.Align.START});
+
+        this.addActor(table, { expand: true, span: 1, align: St.Align.START});
 
         this.connect('activate', callback);
     },
@@ -402,7 +408,7 @@ Applet.prototype = {
         let items = this._applet_context_menu._getMenuItems();
 
         if (this.context_menu_item_remove == null) {
-            this.context_menu_item_remove = new MenuItem(_("Remove this applet"), null, Lang.bind(null, AppletManager._removeAppletFromPanel, this._uuid, this.instance_id));
+            this.context_menu_item_remove = new MenuItem(_("Remove this applet"), Gtk.STOCK_DELETE, Lang.bind(null, AppletManager._removeAppletFromPanel, this._uuid, this.instance_id));
         }
 
         if (this.context_menu_separator == null) {
@@ -415,7 +421,7 @@ Applet.prototype = {
         
         if (!this._meta["hide-configuration"] && GLib.file_test(this._meta["path"] + "/settings-schema.json", GLib.FileTest.EXISTS)) {     
             if (this.context_menu_item_configure == null) {            
-                this.context_menu_item_configure = new MenuItem(_("Configure..."), null, Lang.bind(this, function() {
+                this.context_menu_item_configure = new MenuItem(_("Configure..."), Gtk.STOCK_PREFERENCES, Lang.bind(this, function() {
                     Util.spawnCommandLine("cinnamon-settings applets " + this._uuid + " " + this.instance_id)
                 }));
             }
@@ -521,7 +527,7 @@ IconApplet.prototype = {
             }
             this._applet_icon_box.child = this._applet_icon;
         }
-        this.__icon_type = St.IconType.FULLCOLOR;
+        this.__icon_type = -1;
         this.__icon_name = icon_path;
     },
 
@@ -615,7 +621,8 @@ TextIconApplet.prototype = {
         IconApplet.prototype._init.call(this, orientation, panel_height, instance_id);
         this._applet_label = new St.Label({ reactive: true, track_hover: true, style_class: 'applet-label'});
         this._label_height = (this._panelHeight / DEFAULT_PANEL_HEIGHT) * PANEL_FONT_DEFAULT_HEIGHT;
-        this._applet_label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;     
+        this._applet_label.clutter_text.ellipsize = Pango.EllipsizeMode.NONE;
+        this._applet_label.set_margin_left(6.0);
         this.actor.add(this._applet_label, { y_align: St.Align.MIDDLE, y_fill: false });
     },
 

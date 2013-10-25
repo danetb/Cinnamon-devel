@@ -10,10 +10,12 @@ try:
     import os
     import glob
     import gettext
-    from gi.repository import Gio, Gtk, GObject, GdkPixbuf
+    from gi.repository import Gio, Gtk, GObject, GdkPixbuf, GLib, Pango
     import SettingsWidgets
     import capi
     import time
+    import grp
+    import pwd
 # Standard setting pages... this can be expanded to include applet dirs maybe?
     mod_files = glob.glob('/usr/lib/cinnamon-settings/modules/*.py')
     mod_files.sort()
@@ -66,7 +68,7 @@ CONTROL_CENTER_MODULES = [
 STANDALONE_MODULES = [
 #         Label                          Executable                          Icon                Category        Advanced?               Keywords for filter
     [_("Printers"),                      "system-config-printer",        "printer.svg",         "hardware",       False,          _("printers, laser, inkjet")],    
-    [_("Firewall"),                      "gufw",                         "firewall.svg",        "prefs",          True,           _("firewall, block, filter, programs")],
+    [_("Firewall"),                      "gufw",                         "firewall.svg",        "admin",          True,           _("firewall, block, filter, programs")],
     [_("Languages"),                     "gnome-language-selector",      "language.svg",        "prefs",          False,          _("language, install, foreign")],
     [_("Login Screen"),                  "gksu /usr/sbin/mdmsetup",      "login.svg",           "admin",          True,           _("login, mdm, gdm, manager, user, password, startup, switch")],
     [_("Startup Programs"),              "cinnamon-session-properties",  "startup-programs.svg","prefs",          False,          _("startup, programs, boot, init, session")],
@@ -83,6 +85,11 @@ def print_timing(func):
         print '%s took %0.3f ms' % (func.func_name, (t2-t1)*1000.0)
         return res
     return wrapper
+
+def touch(fname, times=None):
+    with file(fname, 'a'):
+        os.utime(fname, times)
+
 
 class MainWindow:
 
@@ -107,7 +114,7 @@ class MainWindow:
             self.button_back.show()
             self.current_sidepage = sidePage
             self.maybe_resize(sidePage)
-            GObject.idle_add(self.start_fade_in)
+            GObject.timeout_add(250, self.fade_in)
         else:
             sidePage.build(self.advanced_mode)
 
@@ -151,7 +158,8 @@ class MainWindow:
         self.window.set_has_resize_grip(False)
         self.sidePages = []
         self.settings = Gio.Settings.new("org.cinnamon")
-        self.advanced_mode = self.settings.get_boolean(ADVANCED_GSETTING)
+
+        self.advanced_mode = self.force_advanced() or self.settings.get_boolean(ADVANCED_GSETTING)
         self.mode_button = self.builder.get_object("mode_button")
         self.mode_button.set_size_request(self.get_mode_size(), -1)
         if self.advanced_mode:
@@ -163,7 +171,6 @@ class MainWindow:
         self.c_manager = capi.CManager()
         self.content_box.c_manager = self.c_manager
         self.bar_heights = 0
-        self.opacity = 0
 
         for i in range(len(modules)):
             try:
@@ -215,7 +222,7 @@ class MainWindow:
         self.window.connect("destroy", self.quit)
         self.button_cancel.connect("clicked", self.quit)
         self.button_back.connect('clicked', self.back_to_icon_view)
-        self.window.set_opacity(self.opacity)
+        self.window.set_opacity(0)
         self.window.show()
         self.calculate_bar_heights()
         self.window.resize(WIN_WIDTH, WIN_HEIGHT)
@@ -226,7 +233,28 @@ class MainWindow:
             self.findPath(first_page_iter)
         else:
             self.search_entry.grab_focus()
-            GObject.idle_add(self.start_fade_in)
+            self.fade_in()
+
+    def fade_in(self):
+        self.window.set_opacity(1.0)
+
+    def force_advanced(self):
+        ret = False
+        user_name = pwd.getpwuid(os.getuid()).pw_name
+
+        groups = grp.getgrall()
+        for group in groups:
+            (name, pw, gid, mem) = group
+            if name in ("adm", "sudo"):
+                for user in mem:
+                    if user_name == user:
+                        ret = True
+        ret = False
+
+        if os.path.exists(os.path.join(GLib.get_user_config_dir(), ".cs_no_default")):
+            ret = False
+
+        return ret
 
     def get_mode_size(self):
         self.mode_button.set_label(AdvancedMode)
@@ -234,16 +262,6 @@ class MainWindow:
         self.mode_button.set_label(NormalMode)
         nmw, npw = self.mode_button.get_preferred_width()
         return max(apw, npw)
-
-    def start_fade_in(self):
-        if self.opacity < 1.0:
-            GObject.timeout_add(10, self.do_fade_in)
-        return False
-
-    def do_fade_in(self):
-        self.opacity += 0.05
-        self.window.set_opacity(self.opacity)
-        return self.opacity < 1.0
 
     def calculate_bar_heights(self):
         h = 0
@@ -304,14 +322,16 @@ class MainWindow:
         box.pack_start(widget, False, False, 1)
         self.side_view_container.pack_start(box, False, False, 0)
         widget = Gtk.IconView.new_with_model(self.storeFilter[category["id"]])
-        widget.set_text_column(0)
-        widget.set_pixbuf_column(1)
-        widget.set_item_width(110)
-        widget.set_row_spacing(0)
-        widget.set_column_spacing(0)
-        widget.set_row_spacing(0)
-        widget.set_hexpand(True)
-        widget.set_vexpand(False)
+        area = widget.get_area()
+        pixbuf_renderer = Gtk.CellRendererPixbuf()
+        text_renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.NONE, wrap_mode=Pango.WrapMode.WORD, wrap_width=100, alignment=Pango.Alignment.CENTER)
+
+        text_renderer.set_alignment(.5, 0)
+        area.pack_start(pixbuf_renderer, True, True, True)
+        area.pack_start(text_renderer, True, True, True)
+        area.add_attribute(pixbuf_renderer, "pixbuf", 1)
+        area.add_attribute(text_renderer, "text", 0)
+
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data("GtkIconView {                             \
                                          background-color: transparent;        \
@@ -382,6 +402,7 @@ class MainWindow:
         else:
             self.mode_button.set_label(NormalMode)
             self.on_advanced_mode()
+        touch(os.path.join(GLib.get_user_config_dir(), ".cs_no_default"))
         return True
 
     def on_advanced_mode(self):
