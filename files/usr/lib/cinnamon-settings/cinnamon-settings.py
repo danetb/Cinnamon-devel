@@ -45,6 +45,9 @@ WIN_WIDTH = 800
 WIN_HEIGHT = 1000
 WIN_H_PADDING = 20
 
+MIN_LABEL_WIDTH = 16
+MIN_PIX_WIDTH = 100
+
 CATEGORIES = [
 #        Display name                         ID              Show it? Always False to start              Icon
     {"label": _("Appearance"),            "id": "appear",      "show": False,                       "icon": "cat-appearance.svg"},
@@ -211,9 +214,21 @@ class MainWindow:
                 img = None
             sidePagesIters[sp_id] = self.store[sp_cat].append([sp.name, img, sp, sp_cat])
 
+        self.min_label_length = 0
+        self.min_pix_length = 0
+
         for key in self.store.keys():
+            char, pix = self.get_label_min_width(self.store[key])
+            self.min_label_length = max(char, self.min_label_length)
+            self.min_pix_length = max(pix, self.min_pix_length)
             self.storeFilter[key] = self.store[key].filter_new()
             self.storeFilter[key].set_visible_func(self.filter_visible_function)
+
+        self.min_label_length += 2
+        self.min_pix_length += 4
+
+        self.min_label_length = max(self.min_label_length, MIN_LABEL_WIDTH)
+        self.min_pix_length = max(self.min_pix_length, MIN_PIX_WIDTH)
 
         self.displayCategories()
 
@@ -300,6 +315,24 @@ class MainWindow:
                 self.prepCategory(category)
         self.side_view_container.show_all()
 
+    def get_label_min_width(self, model):
+        min_width_chars = 0
+        min_width_pixels = 0
+        icon_view = Gtk.IconView()
+        iter = model.get_iter_first()
+        while iter != None:
+            string = model.get_value(iter, 0)
+            split_by_word = string.split(" ")
+            for word in split_by_word:
+                layout = icon_view.create_pango_layout(word)
+                item_width, item_height = layout.get_pixel_size()
+                if item_width > min_width_pixels:
+                    min_width_pixels = item_width
+                if len(word) > min_width_chars:
+                    min_width_chars = len(word)
+            iter = model.iter_next(iter)
+        return min_width_chars, min_width_pixels
+
     def prepCategory(self, category):
         self.storeFilter[category["id"]].refilter()
         if not self.anyVisibleInCategory(category):
@@ -322,14 +355,16 @@ class MainWindow:
         box.pack_start(widget, False, False, 1)
         self.side_view_container.pack_start(box, False, False, 0)
         widget = Gtk.IconView.new_with_model(self.storeFilter[category["id"]])
+
         area = widget.get_area()
-        widget.set_item_width(105)
+
+        widget.set_item_width(self.min_pix_length)
         pixbuf_renderer = Gtk.CellRendererPixbuf()
-        text_renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.NONE, wrap_mode=Pango.WrapMode.WORD, wrap_width=100, alignment=Pango.Alignment.CENTER)
+        text_renderer = Gtk.CellRendererText(ellipsize=Pango.EllipsizeMode.NONE, wrap_mode=Pango.WrapMode.WORD, wrap_width=0, width_chars=self.min_label_length, alignment=Pango.Alignment.CENTER)
 
         text_renderer.set_alignment(.5, 0)
-        area.pack_start(pixbuf_renderer, True, True, True)
-        area.pack_start(text_renderer, True, True, True)
+        area.pack_start(pixbuf_renderer, True, True, False)
+        area.pack_start(text_renderer, True, True, False)
         area.add_attribute(pixbuf_renderer, "pixbuf", 1)
         area.add_attribute(text_renderer, "text", 0)
 

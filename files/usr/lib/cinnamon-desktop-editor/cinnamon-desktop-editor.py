@@ -93,6 +93,21 @@ class IconPicker(object):
                                         parent=self.dialog,
                                         buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.REJECT,
                                         Gtk.STOCK_OK, Gtk.ResponseType.ACCEPT))
+        chooser.add_shortcut_folder("/usr/share/pixmaps")
+        chooser.add_shortcut_folder("/usr/share/icons")
+        fn = get_icon_string(self.image)
+        if GLib.path_is_absolute(fn):
+            chooser.set_filename(fn)
+        else:
+            theme = Gtk.IconTheme.get_default()
+            icon_info = theme.lookup_icon(fn, 64, 0)
+            icon_info_fn = icon_info.get_filename()
+            if icon_info_fn:
+                chooser.set_filename(icon_info_fn)
+        filter = Gtk.FileFilter();
+        filter.add_pixbuf_formats ();
+        chooser.set_filter(filter);
+
         response = chooser.run()
         if response == Gtk.ResponseType.ACCEPT:
             self.image.props.file = chooser.get_filename()
