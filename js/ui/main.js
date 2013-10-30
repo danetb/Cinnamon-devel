@@ -2,8 +2,6 @@
 /**
  * FILE:main.js
  * @automountManager (AutomountManager.AutomountManager): The automount manager
- * @autorunManager (null): This object no longer in use but is kept
- *                         in case we change our mind
  * @placesManager (PlacesManager.PlacesManager): The places manager
  * @overview (Overview.Overview): The "scale" overview 
  * @expo (Expo.Expo): The "expo" overview
@@ -25,8 +23,6 @@
  * @keyboard (Keyboard.Keyboard): The keyboard object
  * @layoutManager (Layout.LayoutManager): The layout manager
  * @themeManager (ThemeManager.ThemeManager): The theme manager
- * @networkAgent (null): This object is no longer in use, but is kept
- *                       in case we change our mind
  * @dynamicWorkspaces (boolean): Whether dynamic workspaces are to be used.
  *                               This is not yet implemented
  * @nWorks (int): Number of workspaces
@@ -57,10 +53,7 @@ const SoundManager = imports.ui.soundManager;
 const BackgroundManager = imports.ui.backgroundManager;
 const AppletManager = imports.ui.appletManager;
 const AutomountManager = imports.ui.automountManager;
-const AutorunManager = imports.ui.autorunManager;
 const DeskletManager = imports.ui.deskletManager;
-const EndSessionDialog = imports.ui.endSessionDialog;
-const PolkitAuthenticationAgent = imports.ui.polkitAuthenticationAgent;
 const ExtensionSystem = imports.ui.extensionSystem;
 const Keyboard = imports.ui.keyboard;
 const MessageTray = imports.ui.messageTray;
@@ -70,7 +63,6 @@ const PlacesManager = imports.ui.placesManager;
 const RunDialog = imports.ui.runDialog;
 const Layout = imports.ui.layout;
 const LookingGlass = imports.ui.lookingGlass;
-const NetworkAgent = imports.ui.networkAgent;
 const NotificationDaemon = imports.ui.notificationDaemon;
 const WindowAttentionHandler = imports.ui.windowAttentionHandler;
 const Scripting = imports.ui.scripting;
@@ -89,7 +81,6 @@ DEFAULT_BACKGROUND_COLOR.from_pixel(0x2266bbff);
 
 
 let automountManager = null;
-let autorunManager = null;
 
 let soundManager = null;
 let backgroundManager = null;
@@ -115,7 +106,6 @@ let keyboard = null;
 let layoutManager = null;
 let themeManager = null;
 let keybindingManager = null;
-let networkAgent = null;
 let _errorLogStack = [];
 let _startDate;
 let _defaultCssStylesheet = null;
@@ -295,7 +285,7 @@ function start() {
     // races for now we initialize it here.  It's better to
     // be predictable anyways.
     tracker = Cinnamon.WindowTracker.get_default();
-    Cinnamon.AppUsage.get_default();
+    Cinnamon.AppSystem.get_default();
 
     // The stage is always covered so Clutter doesn't need to clear it; however
     // the color is used as the default contents for the Muffin root background
@@ -354,8 +344,6 @@ function start() {
     automountManager = new AutomountManager.AutomountManager();
 
     keybindingManager = new Keybindings.KeybindingManager();
-    //autorunManager = new AutorunManager.AutorunManager();
-    //networkAgent = new NetworkAgent.NetworkAgent();
 
     Meta.later_add(Meta.LaterType.BEFORE_REDRAW, _checkWorkspaces);
 
@@ -377,9 +365,6 @@ function start() {
     // Provide the bus object for gnome-session to
     // initiate logouts.
     //EndSessionDialog.init();
-
-    // Attempt to become a PolicyKit authentication agent
-    PolkitAuthenticationAgent.init()
 
     _startDate = new Date();
 
