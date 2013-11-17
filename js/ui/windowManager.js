@@ -1160,7 +1160,7 @@ WindowManager.prototype = {
                     cell.add_actor(clone);
                 },this);
                 let dimmer = cell.dimmer = new St.Group({x: vBorder, y:vBorder, width: cellWidth, height: cellHeight,
-                    style: "background-color: rgba(0,0,0,0.3)", visible: cell.index!=activeWsIndex
+                    style: "background-color: rgba(0,0,0,0.6)", visible: cell.index!=activeWsIndex
                 });
                 cell.add_actor(dimmer);
             }
