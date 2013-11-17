@@ -953,6 +953,7 @@ WindowManager.prototype = {
             let workspace_osd_y = global.settings.get_int("workspace-osd-y");
             let duration = global.settings.get_int("workspace-osd-duration") / 1000;
             this._forEachWorkspaceMonitor(function(monitor, mIndex) {
+                this._hideWorkspaceOSD(monitor);
                 monitor._workspace_osd = new St.Label({style_class:'workspace-osd'});
                 monitor._workspace_osd.set_text(Main.getWorkspaceName(current_workspace_index));
                 monitor._workspace_osd.set_opacity = 0;
