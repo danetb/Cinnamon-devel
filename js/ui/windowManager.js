@@ -1139,6 +1139,12 @@ WindowManager.prototype = {
                 let scale_x = cellWidth/monitor.width;
                 let scale_y = cellHeight/monitor.height;
                 let scale = Math.min(scale_x, scale_y);
+                if (cell.isWs) {
+                    let desktopBackground = Meta.BackgroundActor.new_for_screen(global.screen);
+                    cell.add_actor(desktopBackground);
+                    desktopBackground.set_scale(scale, scale);
+                    desktopBackground.set_position(vBorder, vBorder);
+                }
 
                 windows.sort(function(a, b){
                     return stackIndices[a] - stackIndices[b];
