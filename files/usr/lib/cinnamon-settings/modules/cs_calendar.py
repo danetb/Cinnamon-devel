@@ -20,13 +20,13 @@ class Module:
             try:
                 self.ntpCheckButton = NtpCheckButton(_("Use network time"))
                 sidePage.add_widget(self.ntpCheckButton)
-            except:
-                pass
+            except Exception, detail:
+                print detail
             sidePage.add_widget(self.changeTimeWidget)
             try:
                 sidePage.add_widget(TimeZoneSelectorWidget())
-            except:
-                pass
+            except Exception, detail:
+                print detail
             
             if self.ntpCheckButton != None:
                 self.ntpCheckButton.connect('toggled', self._ntp_toggled)
@@ -87,7 +87,7 @@ class TimeZoneSelectorWidget(Gtk.HBox):
         
         self.date_time_wrapper = DateTimeWrapper()
         
-        self.timezones = tz.load_db()
+        self.timezones = load_db()
         
         self.selected_region, self.selected_city = self.get_selected_zone()
         
@@ -175,7 +175,7 @@ class ChangeTimeWidget(Gtk.HBox):
         self._time_to_set = None
         
         self.thirtyDays = [3, 5, 8, 10]
-        months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        months = [_("January"),_("February"),_("March"),_("April"),_("May"),_("June"),_("July"),_("August"),_("September"),_("October"),_("November"),_("December")]
         
         # Boxes
         timeBox = Gtk.HBox()
