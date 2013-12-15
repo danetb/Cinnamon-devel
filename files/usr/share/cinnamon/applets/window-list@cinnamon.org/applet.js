@@ -15,11 +15,50 @@ const Mainloop = imports.mainloop;
 const PANEL_ICON_SIZE = 24; // this is for the spinner when loading
 const DEFAULT_ICON_SIZE = 16; // too bad this can't be defined in theme (cinnamon-app.create_icon_texture returns a clutter actor, not a themable object -
                               // probably something that could be addressed
-const SPINNER_ANIMATION_TIME = 1;
-const ICON_HEIGHT_FACTOR = .64;
 
 var g_scaleTextIcons = false;
 var g_panelResizable = false;
+
+const SPINNER_ANIMATION_TIME = 1;
+const ICON_HEIGHT_FACTOR = .64;
+
+
+/* TODO: dragHelper will need to be reworked once more flexible panel configuration is merged */
+
+function dragHelper() {
+    this._init();
+}
+
+dragHelper.prototype = {
+    _init: function() {
+        this.dragging = false;
+        this.panel_show_id = 0;
+    },
+
+    temp_show_panels: function() {
+        if (Main.panel && !this.dragging)
+            Main.panel._enterPanel();
+        if (Main.panel2 && !this.dragging)
+            Main.panel2._enterPanel();
+        if (this.panel_show_id > 0) {
+            Mainloop.source_remove(this.panel_show_id);
+            this.panel_show_id = 0;
+        }
+        this.dragging = true;
+        this.panel_show_id = Mainloop.timeout_add(2000, Lang.bind(this, this.temp_unshow_panels));
+    },
+
+    temp_unshow_panels: function() {
+        if (Main.panel)
+            Main.panel._leavePanel();
+        if (Main.panel2)
+            Main.panel2._leavePanel();
+        this.dragging = false;
+        return false;
+    }
+}
+
+let drag_helper = new dragHelper();
 
 function AppMenuButtonRightClickMenu(actor, metaWindow, orientation) {
     this._init(actor, metaWindow, orientation);
@@ -489,7 +528,7 @@ AppMenuButton.prototype = {
     handleDragOver: function(source, actor, x, y, time) {
         if (this._inEditMode) return DND.DragMotionResult.MOVE_DROP;
         if (source instanceof AppMenuButton) return DND.DragMotionResult.CONTINUE;
-        
+        drag_helper.temp_show_panels();
         if (typeof(this._applet.dragEnterTime) == 'undefined') {
             this._applet.dragEnterTime = time;
         } else {
@@ -702,8 +741,11 @@ MyAppletBox.prototype = {
     
     handleDragOver: function(source, actor, x, y, time) {
         if (this._inEditMode) return DND.DragMotionResult.MOVE_DROP;
-        if (!(source instanceof AppMenuButton)) return DND.DragMotionResult.NO_DROP;
-        
+        if (!(source instanceof AppMenuButton))  {
+            drag_helper.temp_show_panels();
+            return DND.DragMotionResult.NO_DROP;
+        }
+
         let children = this.actor.get_children();
         let windowPos = children.indexOf(source.actor);
         

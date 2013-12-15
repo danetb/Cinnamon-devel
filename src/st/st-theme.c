@@ -240,7 +240,7 @@ st_theme_load_stylesheet (StTheme    *theme,
 {
   CRStyleSheet *stylesheet;
 
-  stylesheet = parse_stylesheet (path, error);
+  stylesheet = parse_stylesheet_nofail (path);
   if (!stylesheet)
     return FALSE;
 
