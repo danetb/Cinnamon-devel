@@ -17,7 +17,8 @@ class Module:
         sidePage.add_widget(box, True)
         box.add(GSettingsCheckButton(_("Top-down"), "org.cinnamon", "workspace-rows-top-down", "org.cinnamon/multiple-workspace-rows-enabled"))
 
-        sidePage.add_widget(GSettingsCheckButton(_("Enable workspace OSD"), "org.cinnamon", "workspace-osd-visible", None), True)
+        self.comment = _("Manage workspace preferences")
+        sidePage.add_widget(GSettingsCheckButton(_("Enable workspace OSD"), "org.cinnamon", "workspace-osd-visible", None))
 
         box = IndentedHBox()
         box.add(GSettingsSpinButton(_("Workspace OSD duration"), "org.cinnamon", "workspace-osd-duration", "org.cinnamon/workspace-osd-visible", 0, 2000, 50, 400, _("milliseconds")))

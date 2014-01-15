@@ -75,6 +75,7 @@ const XdndHandler = imports.ui.xdndHandler;
 const StatusIconDispatcher = imports.ui.statusIconDispatcher;
 const Util = imports.misc.util;
 const Keybindings = imports.ui.keybindings;
+const Settings = imports.ui.settings;
 
 const DEFAULT_BACKGROUND_COLOR = new Clutter.Color();
 DEFAULT_BACKGROUND_COLOR.from_pixel(0x2266bbff);
@@ -113,6 +114,7 @@ let _cssStylesheet = null;
 let dynamicWorkspaces = null;
 let nWorks = null;
 let tracker = null;
+let settingsManager = null;
 
 let workspace_names = [];
 
@@ -389,7 +391,9 @@ function start() {
     global.screen.connect('restacked', _windowsRestacked);
 
     _nWorkspacesChanged();
-    
+
+    settingsManager = new Settings.SettingsManager();
+
     AppletManager.init();
     DeskletManager.init();
 
@@ -1419,6 +1423,9 @@ function queueDeferredWork(workId) {
  * Returns (boolean): whether the window is interesting
  */
 function isInteresting(metaWindow) {
+    if (metaWindow.get_title() == "JavaEmbeddedFrame")
+        return false;
+
     if (tracker.is_window_interesting(metaWindow)) {
         // The nominal case.
         return true;
