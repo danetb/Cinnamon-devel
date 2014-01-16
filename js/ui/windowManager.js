@@ -180,8 +180,6 @@ WindowManager.prototype = {
         }
         if (Main.software_rendering)
             return false;
-        if (this._animationsBlocked > 0)
-            return false;
         if (!actor)
             return global.settings.get_boolean("desktop-effects");
         let type = actor.meta_window.get_window_type();

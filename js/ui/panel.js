@@ -426,26 +426,6 @@ SettingsLauncher.prototype = {
 };
 
 function populateSettingsMenu(menu) {
-    menu.settingsItem = new PopupMenu.PopupSubMenuMenuItem(_("Settings"));
-
-    let menuItem = new SettingsLauncher(_("Themes"), "themes", "themes", menu.settingsItem.menu);
-    menu.settingsItem.menu.addMenuItem(menuItem);
-
-    menuItem = new SettingsLauncher(_("Applets"), "applets", "applets", menu.settingsItem.menu);
-    menu.settingsItem.menu.addMenuItem(menuItem);
-
-    menuItem = new SettingsLauncher(_("Panel"), "panel", "panel", menu.settingsItem.menu);
-    menu.settingsItem.menu.addMenuItem(menuItem);
-	
-	/**
-		menuItem = new SettingsLauncher(_("Menu"), "menu", "menu", menu.settingsItem.menu);
-		menu.settingsItem.menu.addMenuItem(menuItem);
-    */
-
-    menuItem = new SettingsLauncher(_("All settings"), "", "preferences-system", menu.settingsItem.menu);
-    menu.settingsItem.menu.addMenuItem(menuItem);
-
-    menu.addMenuItem(menu.settingsItem);
 
     menu.troubleshootItem = new PopupMenu.PopupSubMenuMenuItem(_("Troubleshoot"));
     menu.troubleshootItem.menu.addAction(_("Restart Cinnamon"), function(event) {
@@ -460,6 +440,8 @@ function populateSettingsMenu(menu) {
         let confirm = new ConfirmDialog();
         confirm.open();
     });
+
+	menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
     menu.addMenuItem(menu.troubleshootItem);
 
@@ -485,17 +467,20 @@ PanelContextMenu.prototype = {
         Main.uiGroup.add_actor(this.actor);
         this.actor.hide();
 
-        populateSettingsMenu(this);
-
         let menuItem = new SettingsLauncher(_("Panel settings"), "panel", "panel", this);
         this.addMenuItem(menuItem);
 
-        let applet_settings_item = new SettingsLauncher(_("Add applets to the panel"), "applets", "applets", this);
-        this.addMenuItem(applet_settings_item);
+        let menuItem = new SettingsLauncher(_("Themes"), "themes", "themes", this);
+        this.addMenuItem(menuItem);
 
+        let menuSetting = new SettingsLauncher(_("All settings"), "", "preferences-system", this);
+        this.addMenuItem(menuSetting);
+
+        populateSettingsMenu(this);
         this.addAction(isHideable ? _("Make this panel always visible") : _("Make this panel hideable"), function(event) {
             global.settings.set_boolean(ahKey, !isHideable);
         });
+
     }
 }
 
