@@ -467,6 +467,9 @@ PanelContextMenu.prototype = {
         Main.uiGroup.add_actor(this.actor);
         this.actor.hide();
 
+        let applet_settings_item = new SettingsLauncher(_("Add applets to the panel"), "applets", "applets", this);
+        this.addMenuItem(applet_settings_item);
+
         let menuItem = new SettingsLauncher(_("Panel settings"), "panel", "panel", this);
         this.addMenuItem(menuItem);
 
@@ -480,7 +483,6 @@ PanelContextMenu.prototype = {
         this.addAction(isHideable ? _("Make this panel always visible") : _("Make this panel hideable"), function(event) {
             global.settings.set_boolean(ahKey, !isHideable);
         });
-
     }
 }
 
